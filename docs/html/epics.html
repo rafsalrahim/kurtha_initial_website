@@ -3,19 +3,21 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Epics and task breakdown</title>
+<title>Epics — what each one is, and what we will actually do</title>
 <style>
 :root { --ink:#0c0b09; --paper:#f4efe6; --muted:#8a8174; --gold:#c9a227; --line:#2a261f; }
 * { box-sizing: border-box; }
 body { margin:0; font-family: Georgia, "Times New Roman", serif; background:var(--ink); color:var(--paper); line-height:1.55; }
 a { color:var(--gold); }
-.wrap { max-width: 820px; margin: 0 auto; padding: 2.5rem 1.25rem 4rem; }
+.wrap { max-width: 880px; margin: 0 auto; padding: 2.5rem 1.25rem 4rem; }
 nav { font-family: system-ui, sans-serif; font-size: 0.8rem; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); margin-bottom: 2rem; }
 nav a { color: var(--gold); text-decoration: none; margin-right: 1rem; }
-h1,h2,h3 { font-weight: 500; letter-spacing: -0.02em; }
+h1,h2,h3,h4 { font-weight: 500; letter-spacing: -0.02em; }
 h1 { font-size: 2rem; margin: 0 0 1rem; }
 h2 { font-size: 1.25rem; margin: 2rem 0 0.75rem; border-top: 1px solid var(--line); padding-top: 1.25rem; }
 h3 { font-size: 1.05rem; margin: 1.4rem 0 0.5rem; }
+h4 { font-size: 0.95rem; margin: 1.1rem 0 0.4rem; color: var(--gold); letter-spacing: 0.04em; text-transform: uppercase; font-family: system-ui, sans-serif; }
+hr { border: 0; border-top: 1px solid var(--line); margin: 2rem 0; }
 p, li { font-size: 1.02rem; }
 ul, ol { padding-left: 1.2rem; }
 code { font-family: ui-monospace, monospace; font-size: 0.85em; background: #1a1814; padding: 0.1em 0.35em; }
@@ -41,90 +43,291 @@ th { color: var(--gold); font-weight: 600; }
   <a href="kanban.html">Kanban</a>
 </nav>
 
-<h1>Epics and task breakdown</h1>
-<p>Hermes board: <code>valoir-shop</code>.</p>
-<p>7 epic containers (blocked, not runnable) + 26 tasks <strong>KUR-001 … KUR-026</strong>.</p>
-<p>Epic cards exist so the dashboard shows the shape. Work happens on KUR-* cards only.</p>
-<p>Kanban IDs: see <a href="kanban.md">kanban.md</a>.</p>
-<p>Effort is a <strong>cap</strong>, not a promise. P0 unless noted.</p>
-<p>---</p>
+<h1>Epics — what each one is, and what we will actually do</h1>
+<p>This is the full implementation plan for board <code>valoir-shop</code>. Read this document if you want to understand the work, not the one-line task list.</p>
+<p>Seven epics, 26 tasks <strong>KUR-001 … KUR-026</strong>. Epic cards on the board are <strong>blocked containers</strong> so the dashboard shows shape. Workers run only on KUR-* cards.</p>
+<p>Status of this document: <strong>proposal</strong>. Storefront, payments, DNS, paid accounts, and production do not start until you approve <strong>KUR-002</strong>. Effort numbers are <strong>caps</strong>, not promises. P0 unless marked P1.</p>
+<p>Kanban IDs: <a href="kanban.html">kanban.md</a>. Stack and money: <a href="architecture-notes.html">architecture.md</a>, <a href="cost-and-risks.html">cost-and-risks.md</a>. Feature in/out: <a href="features.html">features.md</a>.</p>
+<hr/>
+<h2>How the seven epics fit together</h2>
+<p>Valoir needs a house website that can sell a kurta set in India for real money, then let a non-dev co-founder fulfil and refund it. That is one product. The epics are the phases of building it, in the order the dependencies force.</p>
+<p><strong>EPIC-1</strong> decides the stack, the MVP, and the ₹50k model, then freezes that decision so later work stops arguing. <strong>EPIC-2</strong> makes a real repo that boots Medusa + Postgres + Admin on a laptop/VPS. <strong>EPIC-3</strong> models a kurta set (not a T-shirt) and puts sample stock in Admin. <strong>EPIC-4</strong> is the customer-facing house: landing, collections, product page, cart. <strong>EPIC-5</strong> is the money path: India checkout, Razorpay, confirmation, refund, pack-and-ship. <strong>EPIC-6</strong> is the work that makes a launch honest: auth, tests, India checklist, backup restore. <strong>EPIC-7</strong> is one card: staging proof and a launch checklist you sign.</p>
+<p>The critical path (the chain that determines calendar) is:</p>
+<pre><code>001 → 002 (YOU APPROVE) → 003 → 004 → 005 → 007 → 011 → 012 → 013 → 014 → 016 → 017 → 018 → 023 → 026</code></pre>
+<p>Work that can run beside that chain, once its parent exists:</p>
+<ul><li>After 005: CI stubs (006), operator guide (010)</li><li>After 007: oversell test (008), images (009)</li><li>After 002: India compliance research (024) — research only, no legal claims</li><li>After 017: refunds (019); after 018: fulfilment (020) and returns policy (021)</li><li>After 016: auth/rate-limit (022)</li><li>After 006: backup drill (025)</li></ul>
+<p>Nothing in EPIC-4 or later is assigned until KUR-002 is approved. That is enforced by leaving those cards unassigned, not by hoping workers read this file.</p>
+<p>Working stack (pending that approval): Next.js storefront, Medusa v2 as commerce engine, PostgreSQL, Medusa Admin, Razorpay (our own payment provider, not a stale npm plugin), object storage for images, manual fulfilment. Fallback if Razorpay cannot attach to Medusa in test: thin custom order service (Option B). See <a href="architecture-notes.html">architecture.md</a>.</p>
+<hr/>
 <h2>EPIC-1 — Architecture and MVP gate</h2>
-<p>Phase 0–1. Nothing in E4+ is assigned until KUR-002 is approved.</p>
-<h3>KUR-001 Inspect repo, landing, environment</h3>
-<ul><li>Effort: 4h. Deps: none. Status at docs time: <strong>completed</strong></li><li>Outcome: <code>/root/valoir-shop/INSPECT.md</code></li><li>Did: host, Funnel 502, valoir-site prototype, empty public git repo, missing docker/postgres/gh, Node 26 vs LTS</li><li>Did not: start :8080, install packages, overwrite landing</li></ul>
-<h3>KUR-002 Architecture, MVP, ₹50k cost (approval gate)</h3>
-<ul><li>Effort: 1d. Deps: KUR-001. <strong>You must approve.</strong></li><li>Produce: ARCHITECTURE.md, MVP.md, COST.md with sources and dates</li><li>Compare Option A (Medusa + Next.js) vs Option B (thin custom)</li><li>Validate Medusa version + Razorpay compatibility + hosting ToS</li><li>Lock brand language</li><li>Worker: <code>kanban_request_review</code>. Do <strong>not</strong> complete</li></ul>
-<h3>KUR-003 PRD, ADRs, diagram, threat checklist</h3>
-<ul><li>Effort: 4h. Deps: KUR-002 approved</li><li>Freeze the decision so later tasks stop re-litigating the stack</li></ul>
-<p>---</p>
+<h3>What this epic is</h3>
+<p>This epic is the <strong>decision</strong>, not the shop. It exists because the original brief asked for a custom e-commerce site under ₹50,000 cash, with a two-architecture comparison, and the execution board already had 26 tickets that assumed Medusa. Those tickets are not an approved plan. Building a storefront on an uncompared stack, or spending the cash cap on the wrong host, is the expensive mistake.</p>
+<p>When this epic is finished we know: which architecture we are building, what “MVP” means in one sentence, what the ₹50k does and does not buy, which brand language is allowed, and the ADRs later tickets must obey. We still do not have a shop. We have permission to start one.</p>
+<h3>Why it is a separate epic</h3>
+<p>If architecture, money, and MVP live as comments on a coding ticket, they get re-litigated on every card. A dedicated gate (KUR-002) forces a stop: you read three documents, you approve or send back, then KUR-003 freezes the decision into artifacts later workers cannot quietly change.</p>
+<h3>In this epic</h3>
+<ul><li>Inspect the host, the empty git repo, the live Funnel landing, and the tool gaps</li><li>Compare Option A (Medusa + Next.js) vs Option B (thin custom) with current versions, Razorpay status, hosting ToS, and INR costs</li><li>Lock MVP in/out and brand language</li><li>Freeze PRD, ADRs, diagram, deferred list, threat checklist</li></ul>
+<h3>Not in this epic</h3>
+<ul><li>Installing Docker/Postgres, writing app code, designing the storefront, creating Razorpay accounts, buying a domain, touching DNS, restarting Funnel, replacing <code>/root/valoir-site</code></li></ul>
+<h3>Done when</h3>
+<p>KUR-001 is complete (it is). KUR-002 is in <strong>Review</strong> and you have commented approval (or requested changes that were applied and re-reviewed). KUR-003 has committed the frozen ADRs/PRD/diagram into this repo. Only then may EPIC-2 be assigned.</p>
+<h3>KUR-001 — Inspect repo, landing, environment</h3>
+<table><thead><tr><th></th><th></th></tr></thead><tbody><tr><td>Effort cap</td><td>4h</td></tr><tr><td>Priority</td><td>P0</td></tr><tr><td>Depends on</td><td>none</td></tr><tr><td>Kanban</td><td>t_e3824947</td></tr><tr><td>Status</td><td><strong>completed</strong> 2026-10-20</td></tr></tbody></table>
+<p>This card exists so later work does not guess at the machine, the git remote, or the live URL.</p>
+<p>What we did (already): recorded host facts (Ubuntu 26.04, 2 vCPU / 8 GiB, no swap, UFW DROP except Tailscale), runtimes (Python 3.14, Node <strong>26</strong> not LTS), missing tools (no <code>gh</code>, Docker, Postgres, gcc/make), Funnel <code>https://valoir.taile13d7b.ts.net</code> pointing at <code>:8080</code> which was down → 502, landing files at <code>/root/valoir-site</code> (static prototype, checkout “coming”, draft prices ₹2,450–₹3,850), GitHub <code>rafsalrahim/kurtha_initial_website</code> public and empty of app code, boards <code>ideas</code> vs <code>valoir-shop</code>.</p>
+<p>What we explicitly did not do: start <code>:8080</code>, apt-install anything, overwrite the landing, ask for a GitHub token, clone with credentials.</p>
+<p>Artifact: <code>/root/valoir-shop/INSPECT.md</code>.</p>
+<p>Acceptance (met): a dated inspect file covering host, tools, Funnel, landing, git, boards; no side effects on production-looking URLs.</p>
+<h3>KUR-002 — Architecture, MVP, ₹50k cost (approval gate)</h3>
+<table><thead><tr><th></th><th></th></tr></thead><tbody><tr><td>Effort cap</td><td>1 day</td></tr><tr><td>Priority</td><td>P0</td></tr><tr><td>Depends on</td><td>KUR-001</td></tr><tr><td>Kanban</td><td>t_b1ed39e5</td></tr><tr><td>Status</td><td><strong>your approval</strong>. Worker must <code>kanban_request_review</code>, never complete.</td></tr></tbody></table>
+<p>This is the only card that is allowed to choose the stack. Everything after it is execution of that choice.</p>
+<p>What we will do, in order:</p>
+<ol><li>Write <strong>ARCHITECTURE.md</strong>: Option A vs Option B in one comparison table (what, why, cash, recurring, lock-in, ops, migration cost). Pin Medusa version, Node LTS (22 or 24 — not 26), Postgres, storefront (custom Next.js, not a theme), payment approach. Record that there is <strong>no first-party Razorpay plugin</strong> for Medusa v2; community packages are stale or buggy (amount×100×100, JSON-parsed webhook bodies). Recommendation: own a small in-repo <code>AbstractPaymentProvider</code> rather than depend on those packages. Kill criterion for A: if a test-mode UPI/card payment cannot go order → Checkout → signed webhook → Medusa captured → refund, time-box and switch to B. Do not spend a second week fighting a plugin.</li><li>Check <strong>hosting ToS</strong> with dates: Vercel Hobby forbids commercial checkout; a dedicated commercial VPS (new Hostinger KVM, not this Hermes box) is the default; this 2 vCPU agent VPS is not production.</li><li>Lock <strong>brand language</strong> before any UI: luxury / opaque / hangtag. Ban knight / chivalric / quest language in copy, SKUs, CSS tokens, folders, commits. Product names stay in the landing register (material and place, not character).</li><li>Write <strong>MVP.md</strong>: one purchase path that must work (browse → PDP → cart → India checkout → Razorpay test pay → webhook → confirmation → admin fulfil/refund). Explicit deferred table: wishlist, Shiprocket, WhatsApp, custom reporting, international, returns portal, COD, subscriptions, marketplace, Algolia, gift cards, paid fonts, Funnel cutover, live keys.</li><li>Write <strong>COST.md</strong> with dated public prices: ₹50k cash is software + domain + first prepaid host year. Photography is a separate envelope and is the likely breaker. Razorpay ~2.36% of GMV is usage, not cash. Recurring (VPS intro vs year-2 renewal, email, R2) listed so a cheap first year does not hide year two. Three AOV scenarios: ₹6k / ₹8k / ₹10k.</li><li>List <strong>open questions only you can answer</strong>: approve A or force B; brand lock; domain; production host size; make GitHub private before app code; legal entity / GSTIN; photography; which co-founder operates Admin; shipping geography; any reason for Vercel Pro.</li></ol>
+<p>What we will produce: <code>ARCHITECTURE.md</code>, <code>MVP.md</code>, <code>COST.md</code> with sources and fetch dates. Drafts already exist under <code>/root/valoir-shop/</code> for this gate; they land in git when you approve and KUR-003 freezes them.</p>
+<p>What we will not do on this card: install packages, buy anything, create Razorpay/Hostinger/Cloudflare accounts, start storefront tickets, complete the kanban card.</p>
+<p>Acceptance: three dated documents; A vs B compared (not rubber-stamped); Razorpay compatibility treated as a provider we own, not a plugin we hope for; hosting ToS cited; brand lock written; MVP in/out frozen; cost splits cash vs recurring vs photography vs gateway %; card in Review waiting on you.</p>
+<p>Your job: comment approval or send back. Numbered answers to the questions in ARCHITECTURE.md are enough (<code>1 yes, 2 valoir.in, …</code>).</p>
+<h3>KUR-003 — PRD, ADRs, diagram, threat checklist</h3>
+<table><thead><tr><th></th><th></th></tr></thead><tbody><tr><td>Effort cap</td><td>4h</td></tr><tr><td>Priority</td><td>P0</td></tr><tr><td>Depends on</td><td>KUR-002 <strong>approved</strong></td></tr><tr><td>Kanban</td><td>t_a8afa09e</td></tr></tbody></table>
+<p>After you approve, this card copies the decision into <strong>frozen</strong> repo artifacts so KUR-004…026 cannot quietly reopen A vs B, MVP scope, or brand language.</p>
+<p>What we will do:</p>
+<ol><li>PRD: actors (guest, account customer, operator, owner), purchase flow, non-goals, success metric (staging purchase + refund + restore).</li><li>ADRs (one file or a small <code>docs/adr/</code> set): stack choice A (or B if you forced it); Node LTS pin; payments = in-repo Razorpay provider; hosting = dedicated commercial VPS; no card storage; India/INR only; Medusa Admin as the operator UI; Funnel landing not overwritten until cutover.</li><li>Architecture diagram updated to match the approved ADR (the current <a href="html/architecture.html">html/architecture.html</a> is the working drawing).</li><li>Deferred list copied verbatim from MVP.md.</li><li>Threat checklist: webhook forgery, replay, oversell, secret leakage, admin session, dependency CVEs, public-repo secrets. This is a checklist, not a pentest.</li></ol>
+<p>What we will produce: <code>docs/prd.md</code>, <code>docs/adr/</code> (or <code>docs/adrs.md</code>), updated diagram, <code>docs/threats.md</code>, deferred list in-repo.</p>
+<p>Acceptance: later tickets can cite an ADR instead of re-arguing. Brand ban is in an ADR. Kill criterion for Medusa+Razorpay is written where KUR-017 can find it.</p>
+<p>Out: no application code, no CI, no Medusa install.</p>
+<hr/>
 <h2>EPIC-2 — Foundations</h2>
-<h3>KUR-004 Repo layout, env, secrets pattern</h3>
-<ul><li>Effort: 4h. Deps: 003</li><li>Monorepo or apps/storefront + apps/backend. <code>.env.example</code> only. No real keys in git</li></ul>
-<h3>KUR-005 Boot Medusa + Postgres + Admin locally</h3>
-<ul><li>Effort: 1d. Deps: 004</li><li>Pin versions. If Razorpay cannot attach to this Medusa, <strong>block E4</strong> and propose Option B</li></ul>
-<h3>KUR-006 CI stubs, staging/prod config, backup notes (P1)</h3>
-<ul><li>Effort: 4h. Deps: 005</li><li>Lint/test on push. Full restore drill is KUR-025</li></ul>
-<p>---</p>
+<h3>What this epic is</h3>
+<p>This epic is <strong>the factory floor</strong>. After the decision is frozen, we still cannot write catalogue or UI until there is a repo layout, a secrets pattern, and a Medusa+Postgres+Admin process that boots on a pinned Node LTS.</p>
+<p>When this epic is finished a developer can clone the repo, copy <code>.env.example</code>, start Postgres + Medusa + Admin, log into Admin, and see an empty catalogue. CI lint/test stubs exist. Staging vs prod config is named. We still have no products and no public storefront.</p>
+<h3>Why it is a separate epic</h3>
+<p>Mixing “boot the engine” with “design the PDP” is how you get a theme clone running on unpinned Node 26 with secrets in git. Foundations are deliberately boring and blocked on KUR-003 so we do not scaffold the wrong stack.</p>
+<h3>In this epic</h3>
+<ul><li>Monorepo (or <code>apps/storefront</code> + <code>apps/backend</code>) with <code>.env.example</code> only</li><li>Node 22 or 24 LTS for the shop (not Hermes Node 26)</li><li>Medusa 2.21.x pinned, Postgres 16+, Admin at <code>/app</code></li><li>CI stubs and env names for local / staging / prod</li><li>Backup <strong>notes</strong> (the restore drill is KUR-025)</li></ul>
+<h3>Not in this epic</h3>
+<ul><li>Product schema, images, storefront UI, Razorpay keys, production VPS purchase, Funnel cutover</li></ul>
+<h3>Done when</h3>
+<p><code>README</code> has a local boot that a second person can follow. Admin loads. Versions are pinned. No real secrets in git. If Medusa cannot even boot, we stop and do not start EPIC-4.</p>
+<h3>KUR-004 — Repo layout, env, secrets pattern</h3>
+<table><thead><tr><th></th><th></th></tr></thead><tbody><tr><td>Effort cap</td><td>4h</td></tr><tr><td>Priority</td><td>P0</td></tr><tr><td>Depends on</td><td>KUR-003</td></tr><tr><td>Kanban</td><td>t_5d8417be</td></tr></tbody></table>
+<p>What we will do:</p>
+<ol><li>Turn this git repo from planning-docs-only into an app monorepo <strong>without deleting the docs</strong>. Likely <code>apps/backend</code> (Medusa), <code>apps/storefront</code> (Next.js), <code>docs/</code>, <code>scripts/</code>. Exact tree written in README.</li><li><code>.gitignore</code> for <code>.env</code>, <code>node_modules</code>, build output, Postgres data, keys.</li><li><code>.env.example</code> with <strong>names only</strong>: <code>DATABASE_URL</code>, <code>STORE_CORS</code>, <code>ADMIN_CORS</code>, <code>JWT_SECRET</code>, <code>COOKIE_SECRET</code>, <code>RAZORPAY_KEY_ID</code>, <code>RAZORPAY_KEY_SECRET</code>, <code>RAZORPAY_WEBHOOK_SECRET</code>, <code>S3_*</code> / R2, <code>RESEND_API_KEY</code>. Values stay local.</li><li>Document: secrets live in env / vault. Never in git, never on kanban, never in chat. Make the GitHub repo <strong>private</strong> before any real env exists (you do that on GitHub; we do not paste tokens).</li><li><code>package.json</code> workspaces or equivalent so one install boots both apps.</li><li>Editor/Node pin: <code>.nvmrc</code> or <code>engines</code> field = 22 or 24 LTS.</li></ol>
+<p>Acceptance: clone + copy example env + install instructions in README; <code>git grep</code> finds no live keys; docs from EPIC-1 still in the tree.</p>
+<p>Out: not installing Medusa yet (that is 005); not creating cloud accounts.</p>
+<h3>KUR-005 — Boot Medusa + Postgres + Admin locally</h3>
+<table><thead><tr><th></th><th></th></tr></thead><tbody><tr><td>Effort cap</td><td>1 day</td></tr><tr><td>Priority</td><td>P0</td></tr><tr><td>Depends on</td><td>KUR-004</td></tr><tr><td>Kanban</td><td>t_d985df86</td></tr></tbody></table>
+<p>This is the first real engineering risk after approval. If this card fails, the rest of Option A is fantasy.</p>
+<p>What we will do:</p>
+<ol><li>Install what this agent box is missing <strong>for local spike only</strong> (Docker or native Postgres, compiler if node-gyp needs it, Node 22/24 via nvm/fnm). Not a production install. Not opening WAN ports.</li><li>Scaffold Medusa v2 at the <strong>pinned</strong> version from the ADR (working pin: <code>@medusajs/medusa</code> 2.21.x).</li><li>Postgres 16+; migrate; create an admin user.</li><li>Prove Admin loads in a browser (<code>/app</code>). Screenshot or URL in the card comment.</li><li>List plugins/modules we will actually use: product, inventory, cart, order, payment, fulfillment, auth. Redis optional at MVP.</li><li>Stub the Razorpay provider module <strong>enough to register</strong> (identifier <code>razorpay</code>). Full webhook/capture is KUR-017. If the module cannot register on this Medusa version, <strong>block EPIC-4 and EPIC-5</strong>, comment the failure, propose Option B. Do not start the storefront.</li><li>Pin lockfiles. Record Node, Medusa, Postgres versions in README.</li></ol>
+<p>Acceptance: one command (or a short documented sequence) boots API + Admin; Admin login works; versions pinned; Razorpay module either registers or we have formally switched to B.</p>
+<p>Out: no catalogue data beyond Medusa defaults; no Next.js UI; no test Razorpay keys required yet; this Hermes VPS is not declared production.</p>
+<h3>KUR-006 — CI stubs, staging/prod config, backup notes (P1)</h3>
+<table><thead><tr><th></th><th></th></tr></thead><tbody><tr><td>Effort cap</td><td>4h</td></tr><tr><td>Priority</td><td>P1</td></tr><tr><td>Depends on</td><td>KUR-005</td></tr><tr><td>Kanban</td><td>t_24f4de32</td></tr></tbody></table>
+<p>What we will do:</p>
+<ol><li>GitHub Actions (or equivalent) on push: install, lint, unit test stub. No deploy-on-push.</li><li>Name three configs: <code>local</code>, <code>staging</code>, <code>production</code>. Different env files, same code. Staging uses Razorpay <strong>test</strong> keys. Production keys do not exist until KUR-026 + you.</li><li>Backup <strong>notes</strong>: what to dump (<code>pg_dump</code>), where it will go (R2 or equivalent), retention. This is documentation. The actual restore drill is KUR-025.</li><li>Do not buy a second host for staging in year one; staging is a second compose project / hostname on the future shop VPS, or local.</li></ol>
+<p>Acceptance: a failing lint would fail CI; README describes the three envs; backup notes exist.</p>
+<p>Out: not the restore proof; not production deploy.</p>
+<hr/>
 <h2>EPIC-3 — Catalogue and Medusa Admin</h2>
-<h3>KUR-007 Kurta-set product model</h3>
-<ul><li>Effort: 1d. Deps: 005</li><li>Size × colour variants. Fabric / care / fit fields. SCHEMA.md</li></ul>
-<h3>KUR-008 Variant inventory and oversell protection</h3>
-<ul><li>Effort: 4h. Deps: 007</li><li>Two concurrent checkouts against stock=1 → one success</li></ul>
-<h3>KUR-009 Image pipeline and sample catalogue</h3>
-<ul><li>Effort: 4h. Deps: 007</li><li>Placeholders allowed. Real photography is outside the ₹50k software cap</li></ul>
-<h3>KUR-010 Admin RBAC and operator guide (P1)</h3>
-<ul><li>Effort: 4h. Deps: 005</li><li>Owner vs operations. OPERATOR.md: add product, stock, fulfil, refund</li></ul>
-<p>---</p>
+<h3>What this epic is</h3>
+<p>This epic is <strong>the product, as data</strong>. A Valoir SKU is a kurta <strong>set</strong>: named cloth with a fabric story, care, fit, size chart, then variants of size × colour, each with its own stock. If we model this as a generic T-shirt, every later page (PDP, inventory, returns) will lie.</p>
+<p>When this epic is finished Admin can create a set, give it sizes and colours, set stock, attach images (placeholders allowed), and a concurrent checkout cannot sell the same last piece twice. An operator guide exists so a co-founder does not need SSH.</p>
+<h3>Why it is a separate epic</h3>
+<p>Storefront tickets will invent a schema if one does not exist. Inventory and images are cheaper to get right on an empty catalogue than after 011–014 have hardcoded field names.</p>
+<h3>In this epic</h3>
+<ul><li>Product model + <code>SCHEMA.md</code></li><li>Variant inventory + oversell test</li><li>Image pipeline + sample catalogue</li><li>Owner vs operations roles + <code>OPERATOR.md</code></li></ul>
+<h3>Not in this epic</h3>
+<ul><li>Customer-facing pages (EPIC-4)</li><li>Payments (EPIC-5)</li><li>Real photography (human cost, outside ₹50k)</li></ul>
+<h3>Done when</h3>
+<p>A sample drop of a few sets exists in Admin, stock is per variant, oversell test passes, images render from object storage or a documented local stand-in, operator guide covers add / stock / fulfil / refund.</p>
+<h3>KUR-007 — Kurta-set product model</h3>
+<table><thead><tr><th></th><th></th></tr></thead><tbody><tr><td>Effort cap</td><td>1 day</td></tr><tr><td>Priority</td><td>P0</td></tr><tr><td>Depends on</td><td>KUR-005</td></tr><tr><td>Kanban</td><td>t_fa23c6d5</td></tr></tbody></table>
+<p>What we will do:</p>
+<ol><li>Define the sellable unit: <strong>Product</strong> = named set (title, story, fabric, care, fit notes, size chart). <strong>Variant</strong> = size × colour (optional fit). <strong>Inventory</strong> = per variant. <strong>Images</strong> = gallery on the product, optional per colour.</li><li>Map that onto Medusa product + variant + option + metadata/attributes. Do not invent a parallel table if Medusa fields suffice; do not cram fabric/care into the title.</li><li>Size scale: lock one chart for MVP (e.g. S–XXL or the house chart from the landing). Do not ship three competing charts.</li><li>Price: INR, in the <strong>₹6,000–₹10,000</strong> band for sample data. Do not copy Funnel draft prices ₹2,450–₹3,850 into Medusa as if they were the offer.</li><li>Write <code>docs/SCHEMA.md</code>: fields, option names, metadata keys, what the PDP will read. This file is the contract for KUR-012/013.</li></ol>
+<p>Acceptance: Admin can create a set with at least two sizes and two colours; SCHEMA.md lists every field the storefront is allowed to show; sample prices are in the commercial band.</p>
+<p>Out: not the PDP; not image hosting (009); not oversell test (008).</p>
+<h3>KUR-008 — Variant inventory and oversell protection</h3>
+<table><thead><tr><th></th><th></th></tr></thead><tbody><tr><td>Effort cap</td><td>4h</td></tr><tr><td>Priority</td><td>P0</td></tr><tr><td>Depends on</td><td>KUR-007</td></tr><tr><td>Kanban</td><td>t_3b39dc23</td></tr></tbody></table>
+<p>What we will do:</p>
+<ol><li>Stock lives on the <strong>variant</strong>, not the product. Colour “Soot” size M is a different number from size L.</li><li>Reservation/commit behaviour: adding to cart may reserve; payment success commits; failed/abandoned checkout releases. Exact Medusa inventory module behaviour documented in SCHEMA.md.</li><li><strong>Acceptance test</strong>: variant stock = 1; two checkouts start at the same time; only one order can become paid; the other sees out-of-stock or payment refused. Evidence in the card comment (test output, not a story).</li><li>Out-of-stock variants cannot be added (API-level, not only CSS hiding the button).</li></ol>
+<p>Acceptance: the concurrent test is repeatable; Admin stock matches reality after both attempts.</p>
+<p>Out: not a warehouse system; not multi-location; not preorders.</p>
+<h3>KUR-009 — Image pipeline and sample catalogue</h3>
+<table><thead><tr><th></th><th></th></tr></thead><tbody><tr><td>Effort cap</td><td>4h</td></tr><tr><td>Priority</td><td>P0</td></tr><tr><td>Depends on</td><td>KUR-007</td></tr><tr><td>Kanban</td><td>t_7e9b9e83</td></tr></tbody></table>
+<p>What we will do:</p>
+<ol><li>Images go to S3-compatible object storage (R2 planned; local MinIO or filesystem only for spike). Not git LFS, not VPS disk as the production story.</li><li>Pipeline: upload in Admin → stored object → URL on the product. Document max size, formats (JPEG/WebP), and that we do not run a paid image CDN without approval.</li><li>Seed a <strong>sample catalogue</strong> of a handful of sets so PLP/PDP have something to render. Placeholder or existing lookbook images are allowed. Attribution if stock photos.</li><li>Real photography is <strong>out of the ₹50k software cap</strong>. This card does not commission a shoot and does not block on one.</li></ol>
+<p>Acceptance: at least one product has a gallery of 2+ images served from the pipeline; seed script or Admin steps documented; no binary dump of a lookbook in git.</p>
+<p>Out: retouching, model booking, paid Unsplash, CDN signup.</p>
+<h3>KUR-010 — Admin RBAC and operator guide (P1)</h3>
+<table><thead><tr><th></th><th></th></tr></thead><tbody><tr><td>Effort cap</td><td>4h</td></tr><tr><td>Priority</td><td>P1</td></tr><tr><td>Depends on</td><td>KUR-005</td></tr><tr><td>Kanban</td><td>t_5d808e45</td></tr></tbody></table>
+<p>Co-founders will not SSH. If Admin is unusable, fulfilment happens in Telegram screenshots.</p>
+<p>What we will do:</p>
+<ol><li>Two roles at minimum: <strong>owner</strong> (users, secrets-adjacent settings, refunds) and <strong>operations</strong> (products, stock, pack, tracking). Exact Medusa invite/role mapping documented.</li><li>Write <code>docs/OPERATOR.md</code> in plain language: log in; add a set; change stock; mark packed/shipped; enter tracking; issue a refund; what to do when payment shows paid in Razorpay but not in Admin.</li><li>No custom reporting UI. Razorpay dashboard + Medusa order list + CSV if native.</li></ol>
+<p>Acceptance: a non-dev can follow OPERATOR.md without a terminal; roles exist; owner ≠ operations.</p>
+<p>Out: BI dashboards, WhatsApp alerts, mobile admin app.</p>
+<hr/>
 <h2>EPIC-4 — Storefront</h2>
-<p>Starts only after KUR-002 approval (enforced: 011 depends on 003 + 005).</p>
-<h3>KUR-011 Storefront shell and design system</h3>
-<ul><li>Effort: 1–2d. Deps: 003, 005</li><li>Tokens, landing, nav, footer, policy stubs</li><li>Must not replace Funnel <code>/root/valoir-site</code> unless you ask</li></ul>
-<h3>KUR-012 Collections and PLP</h3>
-<ul><li>Effort: 1d. Deps: 011, 007</li></ul>
-<h3>KUR-013 PDP</h3>
-<ul><li>Effort: 1d. Deps: 012</li><li>Gallery, variant picker, size chart, fabric, care, fit. Out-of-stock cannot add</li></ul>
-<h3>KUR-014 Cart and session</h3>
-<ul><li>Effort: 1d. Deps: 013</li><li>Guest cart survives refresh. No wishlist</li></ul>
-<h3>KUR-015 SEO, accessibility, mobile performance (P1)</h3>
-<ul><li>Effort: 4h. Deps: 013</li></ul>
-<p>---</p>
+<h3>What this epic is</h3>
+<p>This epic is <strong>the house, as a website</strong>. It is the only part a customer sees before checkout. It must look like Valoir (ink / ivory / gold, quiet, hangtag copy), not like a Medusa starter or a Shopify fashion theme. It must work on a phone.</p>
+<p>When this epic is finished a customer can land, browse a collection, open a set, understand size / fabric / care / fit, pick an in-stock variant, and hold it in a cart that survives refresh. They cannot pay yet (that is EPIC-5). Policy pages exist as stubs.</p>
+<h3>Why it is a separate epic</h3>
+<p>UI work expands to fill the calendar. Keeping it behind KUR-002/003 and behind a booted catalogue stops us from designing pages against imaginary fields, and stops Funnel <code>/root/valoir-site</code> from being overwritten “to see how it looks”.</p>
+<h3>In this epic</h3>
+<ul><li>Design tokens, landing, nav, footer, policy stubs</li><li>Collections / PLP with size or colour filter</li><li>PDP: gallery, variant picker, size chart, fabric, care, fit</li><li>Cart + guest/account session</li><li>SEO / a11y / mobile performance (P1)</li></ul>
+<h3>Not in this epic</h3>
+<ul><li>Checkout, Razorpay, email, Admin (already exists)</li><li>Replacing the Funnel landing on <code>valoir.taile13d7b.ts.net</code> unless you ask</li><li>Wishlist, search-as-a-product, internationalization</li></ul>
+<h3>Done when</h3>
+<p>Phone-width walkthrough: landing → collection → PDP → add to cart → cart persists after refresh. Out-of-stock cannot add. Copy is luxury/opaque, not chivalric. Funnel origin still serves <code>/root/valoir-site</code>.</p>
+<h3>KUR-011 — Storefront shell and design system</h3>
+<table><thead><tr><th></th><th></th></tr></thead><tbody><tr><td>Effort cap</td><td>1–2 days</td></tr><tr><td>Priority</td><td>P0</td></tr><tr><td>Depends on</td><td>KUR-003, KUR-005</td></tr><tr><td>Kanban</td><td>t_9ec658b3</td></tr></tbody></table>
+<p>What we will do:</p>
+<ol><li>Next.js App Router storefront, <strong>custom UI</strong>. Steal tokens from the existing landing (ink / ivory / gold, Bodoni Moda + Plus Jakarta Sans or the same OFL pair). Do not ship Medusa starter chrome. Do not introduce knight/chivalric names in CSS or routes.</li><li>Global shell: header (wordmark, shop, about/contact as needed), footer (policies, contact), 404.</li><li>House <strong>landing</strong> in the storefront app. This is a second site in code, not a silent replace of Funnel. Bind it to a dev port, not <code>:8080</code>.</li><li>Policy <strong>stubs</strong> that must exist as routes even if copy is draft: privacy, terms, shipping, contact, FAQ. Returns page can wait for KUR-021 or be a stub here.</li><li>Brand lock enforced: grep for banned words in the storefront.</li></ol>
+<p>Acceptance: <code>/</code> renders at 390px width without horizontal scroll; nav and footer present; policy routes return 200; Funnel <code>/root/valoir-site</code> untouched.</p>
+<p>Out: PLP/PDP content (012/013); checkout; production DNS.</p>
+<h3>KUR-012 — Collections and PLP</h3>
+<table><thead><tr><th></th><th></th></tr></thead><tbody><tr><td>Effort cap</td><td>1 day</td></tr><tr><td>Priority</td><td>P0</td></tr><tr><td>Depends on</td><td>KUR-011, KUR-007</td></tr><tr><td>Kanban</td><td>t_2a47411c</td></tr></tbody></table>
+<p>What we will do:</p>
+<ol><li>Collection pages driven by Medusa collections/categories (e.g. the drop, or colour stories). Not hardcoded HTML products.</li><li>Product list card: image, name, price in INR, colourway hint. Price format <code>₹8,000</code>, not <code>$</code> or <code>Rs. 2450</code>.</li><li>Minimal filters: size, colour. No Algolia, no faceted search engine.</li><li>Empty and loading states. Sold-out badge from variant stock, not a manual flag if we can avoid it.</li></ol>
+<p>Acceptance: seeded catalogue from 007/009 appears; filter by size actually reduces the list; a missing collection is a clean empty state, not a crash.</p>
+<p>Out: merchandising CMS, infinite scroll as a product, wishlist heart.</p>
+<h3>KUR-013 — PDP (product detail)</h3>
+<table><thead><tr><th></th><th></th></tr></thead><tbody><tr><td>Effort cap</td><td>1 day</td></tr><tr><td>Priority</td><td>P0</td></tr><tr><td>Depends on</td><td>KUR-012</td></tr><tr><td>Kanban</td><td>t_e641ea2c</td></tr></tbody></table>
+<p>This page <strong>is</strong> the hangtag. If it only shows a photo and a price, the house is not on the internet yet.</p>
+<p>What we will do:</p>
+<ol><li>Gallery (main + thumbs), variant picker (size, colour) that switches image when a colour image exists.</li><li>Size chart, fabric, care, fit — fields from SCHEMA.md, not lorem. If a field is empty, hide the section; do not print “TODO”.</li><li>Price of the selected variant. Add-to-cart enabled only when that variant is in stock. Out-of-stock: visible, not a silent disable.</li><li>Mobile: gallery swipeable or stacked; picker usable with a thumb; no hover-only information.</li></ol>
+<p>Acceptance: every SCHEMA.md customer-facing field has a place; cannot add stock=0; 390px usable.</p>
+<p>Out: reviews, related-products ML, 3D/AR, size recommender.</p>
+<h3>KUR-014 — Cart and session</h3>
+<table><thead><tr><th></th><th></th></tr></thead><tbody><tr><td>Effort cap</td><td>1 day</td></tr><tr><td>Priority</td><td>P0</td></tr><tr><td>Depends on</td><td>KUR-013</td></tr><tr><td>Kanban</td><td>t_2f1eb6cb</td></tr></tbody></table>
+<p>What we will do:</p>
+<ol><li>Cart line items are variants, with qty, line price, remove, update qty (cannot exceed stock).</li><li><strong>Guest cart</strong> survives refresh (cookie/session via Medusa). Logging in merges or adopts the cart (document the chosen rule).</li><li>Account: email/password or whatever Medusa auth we enabled. No social login in MVP.</li><li>Cart drawer or page — one is enough. Empty cart state. No wishlist.</li></ol>
+<p>Acceptance: add on PDP → refresh → item still there; qty cannot exceed stock; guest path works without an account.</p>
+<p>Out: save-for-later, abandoned-cart email (email comes in 018 for orders, not for carts).</p>
+<h3>KUR-015 — SEO, accessibility, mobile performance (P1)</h3>
+<table><thead><tr><th></th><th></th></tr></thead><tbody><tr><td>Effort cap</td><td>4h</td></tr><tr><td>Priority</td><td>P1</td></tr><tr><td>Depends on</td><td>KUR-013</td></tr><tr><td>Kanban</td><td>t_066f9750</td></tr></tbody></table>
+<p>What we will do:</p>
+<ol><li>Per-page title + description; Open Graph on PDP; <code>sitemap.xml</code> + <code>robots.txt</code>.</li><li>Images with width/height and alt from product name.</li><li>Keyboard access to picker and add-to-cart; contrast against ivory/ink; focus states.</li><li>Performance budget: PDP usable on a mid-range phone; no multi-megabyte hero without compression. Lighthouse as a guide, not a religion.</li></ol>
+<p>Acceptance: sitemap lists landing, collections, PDPs, policies; PDP has unique title; 390px still holds after gallery.</p>
+<p>Out: blog, structured-data rabbit hole, AMP.</p>
+<hr/>
 <h2>EPIC-5 — Checkout, payments, fulfilment</h2>
-<p>Purchase path. Reporting UI is not in this epic.</p>
-<h3>KUR-016 Checkout: India address and order create</h3>
-<ul><li>Effort: 1d. Deps: 014, 007</li><li>Creates a pending order. No payment yet</li></ul>
-<h3>KUR-017 Razorpay: webhooks, verify, idempotency</h3>
-<ul><li>Effort: 1–2d. Deps: 016</li><li>Test mode only. Browser success is not enough. No live keys</li><li>Replay webhook must not double-pay</li></ul>
-<h3>KUR-018 Confirmation, history, email</h3>
-<ul><li>Effort: 4h. Deps: 017</li></ul>
-<h3>KUR-019 Refunds and failed payments</h3>
-<ul><li>Effort: 4h. Deps: 017</li></ul>
-<h3>KUR-020 Manual fulfilment and tracking</h3>
-<ul><li>Effort: 4h. Deps: 018</li><li>Packed/shipped + tracking number. No aggregator</li></ul>
-<h3>KUR-021 Returns policy and operator process (P1)</h3>
-<ul><li>Effort: 4h. Deps: 018</li><li>Pages + OPERATOR.md. No returns portal</li></ul>
-<p>---</p>
+<h3>What this epic is</h3>
+<p>This epic is <strong>the purchase</strong>. Everything before it can be a lookbook. After it, money can move (in <strong>test</strong> mode) and a founder can pack a box.</p>
+<p>When this epic is finished: a customer enters an India address, an order is created pending, Razorpay Checkout takes UPI/card/netbanking, a <strong>signed webhook</strong> (not the browser) marks the order paid, stock commits, a confirmation page and email go out, Admin can refund and can mark shipped with a tracking number. Returns are a <strong>policy + operator process</strong>, not a customer portal.</p>
+<h3>Why it is a separate epic</h3>
+<p>Payments have a different failure mode from UI: silent double-charge, unsigned webhooks, oversell at pay time, keys in git. Isolating this epic lets KUR-017 be the kill-switch for Option A without dragging the whole storefront down with a plugin fight.</p>
+<h3>In this epic</h3>
+<ul><li>India checkout + pending order</li><li>Razorpay provider: order, Checkout, webhook HMAC on raw body, idempotent capture, amounts in paise</li><li>Confirmation, history, email</li><li>Refunds and failed payments</li><li>Manual fulfilment + tracking</li><li>Returns policy pages + operator steps (P1)</li></ul>
+<h3>Not in this epic</h3>
+<ul><li>Live Razorpay keys</li><li>COD</li><li>Shiprocket / Delhivery API</li><li>Customer returns portal</li><li>Reporting UI</li><li>Storing PAN/CVV</li></ul>
+<h3>Done when</h3>
+<p>Staging (or local) test keys: pay, see confirmation, see order in Admin, refund, see stock restored or marked refunded, enter tracking. Replay of the same webhook does not double-pay. Browser “success” alone never marks an order paid.</p>
+<h3>KUR-016 — Checkout: India address and order create</h3>
+<table><thead><tr><th></th><th></th></tr></thead><tbody><tr><td>Effort cap</td><td>1 day</td></tr><tr><td>Priority</td><td>P0</td></tr><tr><td>Depends on</td><td>KUR-014, KUR-007</td></tr><tr><td>Kanban</td><td>t_2b15ea49</td></tr></tbody></table>
+<p>What we will do:</p>
+<ol><li>Checkout fields: email, phone, name, India address (line, city, <strong>state</strong>, PIN), guest or account. Phone is required (Razorpay wants contact; “same as shipping” must still send a number).</li><li>GST/invoice fields: implement what KUR-024 has already flagged as <strong>technical</strong> hooks; if 024 is not done, stub clearly labelled gaps rather than invent a GSTIN scheme.</li><li>Create a Medusa order (or payment session) in <strong>pending</strong> / not-paid. No charge yet.</li><li>Validate PIN/state enough to avoid empty addresses; do not build a full address-master database.</li><li>Failed validation stays on the page. No payment widget until the order/session exists server-side.</li></ol>
+<p>Acceptance: a guest with a Bengaluru address can create a pending order; refresh does not duplicate it; no Razorpay charge happens on this card.</p>
+<p>Out: coupons engine (simple native discount only if already cheap); international address forms.</p>
+<h3>KUR-017 — Razorpay: webhooks, verify, idempotency</h3>
+<table><thead><tr><th></th><th></th></tr></thead><tbody><tr><td>Effort cap</td><td>1–2 days</td></tr><tr><td>Priority</td><td>P0</td></tr><tr><td>Depends on</td><td>KUR-016</td></tr><tr><td>Kanban</td><td>t_fbe69c8c</td></tr></tbody></table>
+<p>Highest technical risk in the programme. Test mode only. No live keys.</p>
+<p>What we will do:</p>
+<ol><li>In-repo Medusa payment provider <code>razorpay</code> implementing initiate / authorize / capture / refund against Razorpay Orders + Checkout. Amounts in <strong>paise</strong>, once (never ×100×100).</li><li>Server creates the Razorpay order; browser opens Checkout with that order id. Browser success is <strong>ignored</strong> as a source of truth.</li><li>Webhook path (Medusa convention <code>/hooks/payment/razorpay_razorpay</code> or the ADR’s path): HMAC on <strong>raw body</strong>, not on <code>JSON.parse</code> then re-stringify. Reject bad signatures.</li><li>Idempotency: unique Razorpay order id / payment id; replaying the webhook does not double-capture or double-stock-decrement.</li><li>Do not log PAN, CVV, full card, or raw secrets. Do not store cards.</li><li><strong>Kill criterion</strong> (from KUR-003): if test UPI or card cannot complete the loop (create → Checkout → signed webhook → Medusa captured → refund) inside this card’s cap, stop, block remaining payment polish, propose Option B. Do not start a second week.</li></ol>
+<p>Acceptance: test payment in comment with ids (Razorpay test payment id + Medusa order id); replay test; refund test can live here or on 019 but capture must work here. Card comment includes “browser success without webhook does not mark paid”.</p>
+<p>Out: live KYC, live keys, EMI, international cards, tokenised saved cards as a product.</p>
+<h3>KUR-018 — Confirmation, history, email</h3>
+<table><thead><tr><th></th><th></th></tr></thead><tbody><tr><td>Effort cap</td><td>4h</td></tr><tr><td>Priority</td><td>P0</td></tr><tr><td>Depends on</td><td>KUR-017</td></tr><tr><td>Kanban</td><td>t_4ee2a93e</td></tr></tbody></table>
+<p>What we will do:</p>
+<ol><li>Confirmation page for a paid order: order id, items, address, “what happens next” (we pack, we email tracking). Failed/cancelled Checkout pages exist (from MVP.md).</li><li>Logged-in order history. Guest gets the confirmation page + email only (no magic order portal unless Medusa gives it cheaply).</li><li>Transactional email: order paid. Until you approve a paid provider, <strong>log to console / file</strong> or use Resend free tier if you have already approved that line in COST. No silent paid signup.</li><li>Do not send marketing mail.</li></ol>
+<p>Acceptance: paying in test lands on confirmation; a second visit to that URL still shows the order; an email or a captured log line exists for the same order id.</p>
+<p>Out: SMS, WhatsApp, branded HTML newsletter.</p>
+<h3>KUR-019 — Refunds and failed payments</h3>
+<table><thead><tr><th></th><th></th></tr></thead><tbody><tr><td>Effort cap</td><td>4h</td></tr><tr><td>Priority</td><td>P0</td></tr><tr><td>Depends on</td><td>KUR-017</td></tr><tr><td>Kanban</td><td>t_b802198f</td></tr></tbody></table>
+<p>What we will do:</p>
+<ol><li>Admin refund of a captured test order → Razorpay refund → Medusa order state updated. Document whether gateway fee is returned (assume not).</li><li>Failed / cancelled Checkout: order does not stay “paid”; stock released; customer sees a recoverable error.</li><li>Reconciliation notes in OPERATOR.md: if Razorpay says captured and Medusa says pending, what the operator does (do not “just mark paid” without the webhook signature path).</li><li>No partial-refund UI unless Medusa already makes it easy; full refund is enough for MVP.</li></ol>
+<p>Acceptance: one recorded test refund; one failed-payment path; operator note written.</p>
+<p>Out: chargebacks product, automatic retry queue as a platform.</p>
+<h3>KUR-020 — Manual fulfilment and tracking</h3>
+<table><thead><tr><th></th><th></th></tr></thead><tbody><tr><td>Effort cap</td><td>4h</td></tr><tr><td>Priority</td><td>P0</td></tr><tr><td>Depends on</td><td>KUR-018</td></tr><tr><td>Kanban</td><td>t_f02c1496</td></tr></tbody></table>
+<p>First orders are packed by a person. An aggregator is later.</p>
+<p>What we will do:</p>
+<ol><li>Admin statuses: at least packed / shipped (names per Medusa fulfillment). </li><li>Tracking number field on the fulfillment. Carrier name as text (India Post / DTDC / whatever they used), not an API.</li><li>Customer notice: email (or log) with tracking when marked shipped.</li><li>OPERATOR.md steps: print/pack, enter tracking, send.</li></ol>
+<p>Acceptance: an order can go paid → shipped with a tracking string; customer-facing notice exists; no Shiprocket account.</p>
+<p>Out: label printing integration, pickup scheduling, COD.</p>
+<h3>KUR-021 — Returns policy and operator process (P1)</h3>
+<table><thead><tr><th></th><th></th></tr></thead><tbody><tr><td>Effort cap</td><td>4h</td></tr><tr><td>Priority</td><td>P1</td></tr><tr><td>Depends on</td><td>KUR-018</td></tr><tr><td>Kanban</td><td>t_e1fe8006</td></tr></tbody></table>
+<p>What we will do:</p>
+<ol><li>Public pages: returns / exchange policy (draft copy you can edit). Shipping page already stubbed in 011, aligned here.</li><li>Operator process in OPERATOR.md: customer writes to contact email; operator decides; refund via 019 or replacement order; no self-serve portal.</li><li>Do not build return-merchandise authorisation software.</li></ol>
+<p>Acceptance: <code>/returns</code> (or equivalent) returns 200; operator steps written; no customer login flow for “start a return”.</p>
+<p>Out: reverse-pickup API, warehouse returns queue.</p>
+<hr/>
 <h2>EPIC-6 — Security, compliance, quality</h2>
-<h3>KUR-022 Auth, sessions, rate limits, dependency scan</h3>
-<ul><li>Effort: 1d. Deps: 016</li></ul>
-<h3>KUR-023 Automated tests for purchase and refund</h3>
-<ul><li>Effort: 1d. Deps: 017, 019</li><li>Launch gate needs a repeatable command, not a demo video only</li></ul>
-<h3>KUR-024 India e-commerce 2027 / GST / DPDP checklist</h3>
-<ul><li>Effort: 4h. Deps: 002</li><li>Technical vs professional items. <strong>Not legal advice.</strong> Questions for CA/lawyer</li></ul>
-<h3>KUR-025 Backup restore drill and rollback</h3>
-<ul><li>Effort: 4h. Deps: 006</li><li>Actually restore once. Launch gate requires proof</li></ul>
-<p>---</p>
+<h3>What this epic is</h3>
+<p>This epic is <strong>why a launch is not a demo</strong>. A founder clicking through Checkout once is not evidence. Neither is a README that says “we should back up Postgres”.</p>
+<p>When this epic is finished: sessions and rate limits exist, dependencies have been scanned, there is a command that buys and refunds in test without a human, India 2027 / GST / DPDP is a <strong>checklist with questions for a CA/lawyer</strong> (not a claim that we are compliant), and we have actually restored a backup once.</p>
+<h3>Why it is a separate epic</h3>
+<p>If this work is “polish on the launch card”, it will be skipped. It is also mostly parallel: 024 can start after 002; 022 after checkout exists; 023 after pay+refund exist; 025 after backup notes exist.</p>
+<h3>In this epic</h3>
+<ul><li>Auth, session hardening, rate limits, validation, dep scan</li><li>Automated purchase + refund tests</li><li>India e-commerce / GST / DPDP checklist</li><li>Backup restore drill + rollback runbook</li></ul>
+<h3>Not in this epic</h3>
+<ul><li>Legal advice, CA work, GST registration, DPDP notice drafting by a lawyer</li><li>A pentest firm</li><li>Production monitoring SaaS without approval</li></ul>
+<h3>Done when</h3>
+<p><code>npm test</code> (or documented equivalent) covers pay+refund; <code>docs/compliance.md</code> lists technical vs professional items; a restore has been performed and the notes say so with a date; secrets still not in git.</p>
+<h3>KUR-022 — Auth, sessions, rate limits, dependency scan</h3>
+<table><thead><tr><th></th><th></th></tr></thead><tbody><tr><td>Effort cap</td><td>1 day</td></tr><tr><td>Priority</td><td>P0</td></tr><tr><td>Depends on</td><td>KUR-016</td></tr><tr><td>Kanban</td><td>t_f1f6ac33</td></tr></tbody></table>
+<p>What we will do:</p>
+<ol><li>Cookie/session flags: Secure, HttpOnly, SameSite as appropriate behind Caddy TLS. Admin not exposed without auth.</li><li>Rate limit: checkout, login, webhook URL (webhook still must verify HMAC).</li><li>Input validation on address and qty (no negative qty, no 10k-char names).</li><li>Dependency scan (<code>npm audit</code> or <code>osv-scanner</code>) on the lockfiles; high/critical either fixed or waived in writing on the card.</li><li>Confirm we never log secrets or card data (grep + a note in threats.md).</li></ol>
+<p>Acceptance: unauthenticated Admin is denied; webhook with a bad signature is 4xx; audit output attached or waived.</p>
+<p>Out: WAF purchase, bot management product, SSO.</p>
+<h3>KUR-023 — Automated tests for purchase and refund</h3>
+<table><thead><tr><th></th><th></th></tr></thead><tbody><tr><td>Effort cap</td><td>1 day</td></tr><tr><td>Priority</td><td>P0</td></tr><tr><td>Depends on</td><td>KUR-017, KUR-019</td></tr><tr><td>Kanban</td><td>t_6dca0f34</td></tr></tbody></table>
+<p>Launch gate needs a <strong>command</strong>, not a Loom.</p>
+<p>What we will do:</p>
+<ol><li>Automated path: seed variant with stock → create cart → checkout → <strong>simulate or test-mode pay</strong> → order paid → refund → stock/order state asserted.</li><li>Webhook replay test: same event twice → one capture.</li><li>Oversell test from 008 kept green.</li><li>Document the exact command in README. CI runs it if credentials for Razorpay test can be injected as secrets (GitHub Actions secrets, not the board). If CI cannot hold secrets yet, the command still runs locally and 026 records the output.</li></ol>
+<p>Acceptance: one command, repeatable, exit 0; evidence pasted on the card.</p>
+<p>Out: full Playwright suite of every marketing page; visual regression.</p>
+<h3>KUR-024 — India e-commerce 2027 / GST / DPDP checklist</h3>
+<table><thead><tr><th></th><th></th></tr></thead><tbody><tr><td>Effort cap</td><td>4h</td></tr><tr><td>Priority</td><td>P0</td></tr><tr><td>Depends on</td><td>KUR-002</td></tr><tr><td>Kanban</td><td>t_604255de</td></tr></tbody></table>
+<p>Research card. <strong>Not legal advice.</strong> Can run in parallel as soon as 002 is approved.</p>
+<p>What we will do:</p>
+<ol><li>Read, with dates, the January 2027 Indian e-commerce rule changes as publicly described, GST invoicing for online goods, DPDP obligations that a small house site might touch (privacy notice, consent, data minimisation, no card storage).</li><li>Split every item: <strong>we can implement in code</strong> vs <strong>you need a CA/lawyer/GSTIN</strong>. Examples of technical: invoice fields, privacy page, retention of order PII, not storing cards. Examples of professional: entity, GST registration, legal terms, grievance officer if required.</li><li>Write <code>docs/compliance.md</code> as a checklist with sources. Questions for the CA/lawyer listed at the bottom, unanswered.</li><li>Feed field requirements back into 016 if 016 has not started; if 016 already shipped, open a gap list rather than silently inventing GSTIN on the PDP.</li></ol>
+<p>Acceptance: checklist exists; every line is tagged technical vs professional; document says it is not legal advice.</p>
+<p>Out: filing GST, drafting the real Terms of Sale, claiming “DPDP compliant” on the website.</p>
+<h3>KUR-025 — Backup restore drill and rollback</h3>
+<table><thead><tr><th></th><th></th></tr></thead><tbody><tr><td>Effort cap</td><td>4h</td></tr><tr><td>Priority</td><td>P0</td></tr><tr><td>Depends on</td><td>KUR-006</td></tr><tr><td>Kanban</td><td>t_a9d92dcd</td></tr></tbody></table>
+<p>Notes are not a drill. This card restores once.</p>
+<p>What we will do:</p>
+<ol><li>Take a <code>pg_dump</code> of the spike/staging DB. Store it where the runbook says (object storage or a dated file <strong>outside git</strong>).</li><li>Restore onto a throwaway database. Prove a known order or product reappears. Record command + timestamp on the card.</li><li>Rollback runbook: how to put the previous app version back (container tag / git SHA) and how to refuse a bad migrate.</li><li>Monitoring: process up, TLS, disk. Cheap: Caddy + a cron ping. No paid APM unless you approve.</li></ol>
+<p>Acceptance: restore evidence with date; runbook in <code>docs/runbook.md</code>; launch checklist in 026 can tick this.</p>
+<p>Out: multi-region replica, PITR as a product for MVP.</p>
+<hr/>
 <h2>EPIC-7 — Launch</h2>
-<h3>KUR-026 Staging e2e and production launch checklist</h3>
-<ul><li>Effort: 1d. Deps: 015, 020, 023, 024, 025</li><li>Worker: <code>kanban_request_review</code>. Do <strong>not</strong> complete</li><li>No DNS, no live Razorpay, no Funnel cutover without you</li></ul>
-<p>Launch gates:</p>
-<ul><li>Checklist green or explicitly waived by you</li><li>Staging purchase + refund evidence</li><li>Restore + rollback referenced</li><li>Remaining human steps listed: domain, GSTIN, live keys, photography</li></ul>
-<p>---</p>
-<h2>Critical path</h2>
-<pre><code>001 → 002 (APPROVAL) → 003 → 004 → 005 → 007 → 011 → 012 → 013 → 014 → 016 → 017 → 018 → 023 → 026</code></pre>
-<p>Parallel:</p>
-<ul><li>After 005: 006, 010</li><li>After 007: 008, 009</li><li>After 002: 024 (research)</li><li>After 017: 019</li></ul>
+<h3>What this epic is</h3>
+<p>This epic is <strong>one gate</strong>, not a marketing campaign. It exists so “we should go live” is a checklist you sign, not a feeling after a good demo.</p>
+<p>When this epic is finished you have a written list of what is green, what you waived, what only you can still do (domain, GSTIN, live keys, photography, Funnel cutover), and a staging e2e that was run that day. The site is still not live until you say so.</p>
+<h3>Why it is a separate epic</h3>
+<p>If launch is mixed into KUR-017, someone will put live keys in <code>.env</code> to “just try”. This card is Review-only. The worker cannot complete it.</p>
+<h3>In this epic</h3>
+<ul><li>Staging end-to-end on test keys</li><li>Launch checklist</li><li>Explicit remaining human steps</li></ul>
+<h3>Not in this epic</h3>
+<ul><li>DNS, live Razorpay, Funnel cutover, domain purchase, announcing the shop</li><li>Any of those without a separate yes from you</li></ul>
+<h3>Done when</h3>
+<p>You have approved the checklist (or waived lines in writing). Production still does not happen on this card.</p>
+<h3>KUR-026 — Staging e2e and production launch checklist</h3>
+<table><thead><tr><th></th><th></th></tr></thead><tbody><tr><td>Effort cap</td><td>1 day</td></tr><tr><td>Priority</td><td>P0</td></tr><tr><td>Depends on</td><td>KUR-015, KUR-020, KUR-023, KUR-024, KUR-025</td></tr><tr><td>Kanban</td><td>t_a7016323</td></tr><tr><td>Worker</td><td><code>kanban_request_review</code>. <strong>Do not complete.</strong></td></tr></tbody></table>
+<p>What we will do:</p>
+<ol><li>Run the full staging path the same day: browse → PDP → cart → pay (test) → confirmation → Admin fulfil with tracking → refund. Attach evidence (order ids, test command output, restore date from 025).</li><li>Write <code>docs/LAUNCH.md</code> checklist:</li></ol>
+<table><thead><tr><th>Check</th><th>Evidence</th></tr></thead><tbody><tr><td>Automated pay+refund command green</td><td>KUR-023 output</td></tr><tr><td>Oversell test green</td><td>KUR-008/023</td></tr><tr><td>Webhook signature + replay</td><td>KUR-017</td></tr><tr><td>Backup restored once</td><td>KUR-025 date</td></tr><tr><td>Compliance checklist reviewed (not “we are legal”)</td><td>KUR-024</td></tr><tr><td>No live keys in git</td><td>grep</td></tr><tr><td>Funnel landing still independent</td><td><code>/root/valoir-site</code></td></tr><tr><td>Brand lock (no chivalric)</td><td>grep</td></tr><tr><td>OPERATOR.md usable</td><td>010/020</td></tr><tr><td>Hosting is not this Hermes VPS</td><td>ADR</td></tr></tbody></table>
+<ol><li>Remaining <strong>human</strong> steps, not done by the worker: domain name and buy; DNS; GitHub private if still public; Razorpay KYC + live keys; GSTIN / entity; photography decision; who is Admin owner; whether to cut Funnel to the storefront; production VPS purchase.</li></ol>
+<p>Acceptance: LAUNCH.md committed; card in Review; every remaining human step listed; <strong>no DNS change, no live key, no Funnel cutover</strong> on this card.</p>
+<p>Your job: tick or waive, then give a separate explicit yes for each irreversible step.</p>
+<hr/>
+<h2>What “done” means for the whole programme (MVP)</h2>
+<p>A customer on a phone can browse a collection, understand a set’s size/fabric/care/fit, add an in-stock variant, check out with an India address, pay in Razorpay <strong>test</strong> mode, and see a confirmation. A founder can fulfil and refund in Admin without SSH. We have restored a backup once. Live money, live DNS, and photography are still your calls.</p>
+<p>That is the end of KUR-001…026. Wishlist, Shiprocket, WhatsApp, custom reporting, international, and a returns portal are <strong>not</strong> how this programme finishes. They are later programmes.</p>
+<hr/>
 <h2>What is blocked on you</h2>
-<table><thead><tr><th>Gate</th><th>Task</th><th>You do</th></tr></thead><tbody><tr><td>Architecture / money / MVP</td><td>KUR-002</td><td>Approve or request changes</td></tr><tr><td>Git auth / private repo</td><td>—</td><td>Do not paste tokens in chat or on cards</td></tr><tr><td>Paid services</td><td>any</td><td>Explicit yes</td></tr><tr><td>Production</td><td>KUR-026</td><td>Explicit yes</td></tr></tbody></table>
+<table><thead><tr><th>Gate</th><th>Task</th><th>You do</th></tr></thead><tbody><tr><td>Architecture / MVP / money</td><td>KUR-002</td><td>Approve A (or force B), brand lock, answer the numbered questions</td></tr><tr><td>GitHub visibility</td><td>before app secrets</td><td>Make <code>kurtha_initial_website</code> private; do not paste tokens</td></tr><tr><td>Paid services</td><td>any</td><td>Explicit yes per signup</td></tr><tr><td>Domain, DNS, live Razorpay, Funnel cutover</td><td>after KUR-026</td><td>Explicit yes per action</td></tr><tr><td>Photography, GSTIN, legal entity</td><td>parallel, not software</td><td>Your envelope, not the ₹50k software cap</td></tr></tbody></table>
 <p class="note">Valoir planning docs · 2026-10-20 · pending KUR-002. Not a production site.</p>
 </div>
 </body>

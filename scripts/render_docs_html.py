@@ -15,13 +15,15 @@ CSS = """
 * { box-sizing: border-box; }
 body { margin:0; font-family: Georgia, "Times New Roman", serif; background:var(--ink); color:var(--paper); line-height:1.55; }
 a { color:var(--gold); }
-.wrap { max-width: 820px; margin: 0 auto; padding: 2.5rem 1.25rem 4rem; }
+.wrap { max-width: 880px; margin: 0 auto; padding: 2.5rem 1.25rem 4rem; }
 nav { font-family: system-ui, sans-serif; font-size: 0.8rem; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); margin-bottom: 2rem; }
 nav a { color: var(--gold); text-decoration: none; margin-right: 1rem; }
-h1,h2,h3 { font-weight: 500; letter-spacing: -0.02em; }
+h1,h2,h3,h4 { font-weight: 500; letter-spacing: -0.02em; }
 h1 { font-size: 2rem; margin: 0 0 1rem; }
 h2 { font-size: 1.25rem; margin: 2rem 0 0.75rem; border-top: 1px solid var(--line); padding-top: 1.25rem; }
 h3 { font-size: 1.05rem; margin: 1.4rem 0 0.5rem; }
+h4 { font-size: 0.95rem; margin: 1.1rem 0 0.4rem; color: var(--gold); letter-spacing: 0.04em; text-transform: uppercase; font-family: system-ui, sans-serif; }
+hr { border: 0; border-top: 1px solid var(--line); margin: 2rem 0; }
 p, li { font-size: 1.02rem; }
 ul, ol { padding-left: 1.2rem; }
 code { font-family: ui-monospace, monospace; font-size: 0.85em; background: #1a1814; padding: 0.1em 0.35em; }
@@ -93,12 +95,16 @@ def convert(md: str) -> str:
         if not line.strip():
             i += 1
             continue
-        if line.startswith("# "):
+        if line.strip() == "---":
+            out.append("<hr/>")
+        elif line.startswith("# "):
             out.append(f"<h1>{inline(line[2:])}</h1>")
         elif line.startswith("## "):
             out.append(f"<h2>{inline(line[3:])}</h2>")
         elif line.startswith("### "):
             out.append(f"<h3>{inline(line[4:])}</h3>")
+        elif line.startswith("#### "):
+            out.append(f"<h4>{inline(line[5:])}</h4>")
         elif re.match(r"^\d+\. ", line):
             items = []
             while i < len(lines) and re.match(r"^\d+\. ", lines[i]):
@@ -155,7 +161,15 @@ def main() -> None:
         src = MD_DIR / src_name
         body = convert(src.read_text())
         title = src.read_text().splitlines()[0].lstrip("# ").strip()
-        (OUT / dest_name).write_text(page(title, body), encoding="utf-8")
+        html_page = page(title, body)
+        html_page = html_page.replace('href="kanban.md"', 'href="kanban.html"')
+        html_page = html_page.replace('href="overview.md"', 'href="overview.html"')
+        html_page = html_page.replace('href="architecture.md"', 'href="architecture-notes.html"')
+        html_page = html_page.replace('href="features.md"', 'href="features.html"')
+        html_page = html_page.replace('href="epics.md"', 'href="epics.html"')
+        html_page = html_page.replace('href="cost-and-risks.md"', 'href="cost-and-risks.html"')
+        html_page = html_page.replace('href="plan.md"', 'href="../plan.md"')
+        (OUT / dest_name).write_text(html_page, encoding="utf-8")
         print("wrote", dest_name)
 
     index_body = convert(

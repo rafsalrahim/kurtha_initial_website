@@ -12,8 +12,8 @@ There is no application code yet. The GitHub repo was empty on 2026-10-20. Imple
 | [docs/architecture.md](docs/architecture.md) | Working stack, alternative, data flows, what is undecided |
 | [docs/html/architecture.html](docs/html/architecture.html) | Visual architecture diagram (open in a browser) |
 | [docs/features.md](docs/features.md) | MVP vs later, mapped to tasks |
-| [docs/epics.md](docs/epics.md) | Seven epics and all 26 KUR tasks |
-| [docs/html/epics.html](docs/html/epics.html) | Same epic breakdown, readable HTML |
+| [docs/epics.md](docs/epics.md) | Full epic plans: what each epic is, every KUR task in detail |
+| [docs/html/epics.html](docs/html/epics.html) | Same, readable HTML |
 | [docs/html/features.html](docs/html/features.html) | Feature list as HTML |
 | [docs/html/index.html](docs/html/index.html) | HTML hub |
 | [docs/cost-and-risks.md](docs/cost-and-risks.md) | ₹50k cash cap, recurring vs cash, risks |

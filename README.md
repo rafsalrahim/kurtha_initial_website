@@ -9,8 +9,8 @@ There is no application code yet. The GitHub repo was empty on 2026-10-20. Imple
 | File | What it is |
 |------|------------|
 | [docs/overview.md](docs/overview.md) | Why this shape, constraints, what we will not do yet |
-| [docs/architecture.md](docs/architecture.md) | Working stack, alternative, data flows, what is undecided |
-| [docs/html/architecture.html](docs/html/architecture.html) | Visual architecture diagram (open in a browser) |
+| [docs/architecture.md](docs/architecture.md) | Processes, Postgres connection, data flows |
+| [docs/html/architecture.html](docs/html/architecture.html) | Visual: system + database connection diagrams |
 | [docs/features.md](docs/features.md) | MVP vs later, mapped to tasks |
 | [docs/epics.md](docs/epics.md) | Full epic plans: what each epic is, every KUR task in detail |
 | [docs/html/epics.html](docs/html/epics.html) | Same, readable HTML |

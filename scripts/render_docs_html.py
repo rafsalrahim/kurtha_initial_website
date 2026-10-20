@@ -169,6 +169,7 @@ def main() -> None:
         html_page = html_page.replace('href="epics.md"', 'href="epics.html"')
         html_page = html_page.replace('href="cost-and-risks.md"', 'href="cost-and-risks.html"')
         html_page = html_page.replace('href="plan.md"', 'href="../plan.md"')
+        html_page = html_page.replace('href="html/architecture.html"', 'href="architecture.html"')
         (OUT / dest_name).write_text(html_page, encoding="utf-8")
         print("wrote", dest_name)
 

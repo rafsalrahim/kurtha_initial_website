@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Architecture (working assumption — pending KUR-002)</title>
+<title>Architecture — processes, data, and how Postgres is connected</title>
 <style>
 :root { --ink:#0c0b09; --paper:#f4efe6; --muted:#8a8174; --gold:#c9a227; --line:#2a261f; }
 * { box-sizing: border-box; }
@@ -43,52 +43,117 @@ th { color: var(--gold); font-weight: 600; }
   <a href="kanban.html">Kanban</a>
 </nav>
 
-<h1>Architecture (working assumption — pending KUR-002)</h1>
-<p>Visual: <a href="html/architecture.html">html/architecture.html</a></p>
-<p>This is <strong>not</strong> a frozen ADR. KUR-002 must still beat Option A against Option B with current Medusa version, Razorpay plugin status, hosting ToS, and INR costs.</p>
-<h2>Option A — preferred</h2>
-<pre><code>Customer browser
-    → Next.js storefront (SSR/SSG + cart UI)
-        → Medusa JS API (catalogue, cart, checkout, customers, orders)
-            → PostgreSQL
-            → Object storage (images)
-            → Razorpay (orders + webhooks, never card data)
-            → Email provider (after approval; log-to-console until then)
-        → Medusa Admin (founders / operations)</code></pre>
-<p>One commerce backend. Storefront and Admin are separate UIs on the same engine. Not microservices.</p>
-<h3>Why A</h3>
-<ul><li>Catalogue, variants, inventory, carts, orders, refunds already exist</li><li>Admin exists; we do not build a custom dashboard in MVP</li><li>We still own code, DB, and the customer list</li><li>Can replace the storefront without throwing away orders</li><li>Matches “custom website” without reinventing checkout math</li></ul>
-<h3>Why A can fail</h3>
-<ul><li>Medusa v2 + Razorpay plugin/version mismatch (highest technical risk)</li><li>Node on this host is v26 (Hermes-bundled), not Medusa’s usual 20/22 LTS</li><li>No Docker / Postgres / C compiler on the agent box today (KUR-005 must install or we host elsewhere)</li><li>2 vCPU / 8 GiB Hostinger VPS is shared with Hermes — not assumed as production</li></ul>
-<h2>Option B — fallback</h2>
-<p>Next.js storefront + a small Node/Python order service + Postgres + Razorpay Checkout.</p>
-<p>Wins only if A is incompatible or too heavy for one operator. Loses Medusa Admin; we would then need a tiny internal order screen (still not a full BI dashboard).</p>
-<h2>Trust boundaries</h2>
-<table><thead><tr><th>Flow</th><th>Rule</th></tr></thead><tbody><tr><td>Browser says “paid”</td><td>Ignored. Order becomes paid only after Razorpay signature / webhook verify</td></tr><tr><td>Webhooks</td><td>Signed, idempotent, rate-limited</td></tr><tr><td>Cards / CVV</td><td>Never stored. Never logged</td></tr><tr><td>Secrets</td><td>Env / vault only. Not git, not kanban, not chat</td></tr><tr><td>Admin</td><td>Role-based. Non-devs use Admin, not SSH</td></tr><tr><td>Inventory</td><td>Stock at variant (size × colour). Concurrent checkout cannot oversell</td></tr></tbody></table>
-<h2>Product model (kurta set, not a T-shirt)</h2>
-<p>A sellable SKU is a <strong>kurta set variant</strong>:</p>
-<ul><li>Product: named set (fabric story, care, fit notes, size chart)</li><li>Variant: size × colour (optional fit)</li><li>Attributes: fabric, care, fit guidance</li><li>Inventory: per variant</li><li>Images: gallery per product, optional per colour</li></ul>
-<p>This is locked in KUR-007. Wrong model here is expensive later.</p>
+<h1>Architecture — processes, data, and how Postgres is connected</h1>
+<p>Visual: <a href="architecture.html">html/architecture.html</a> (system diagram + database connection diagram).</p>
+<p>Option A is the locked stack (KUR-002): <strong>Medusa v2.21.x + Next.js storefront + PostgreSQL + an in-repo Razorpay provider, on a dedicated commercial VPS.</strong> Option B remains the kill-switch if test-mode Razorpay cannot complete during KUR-017. Domain, DNS, paid VPS, and live keys still need a later explicit yes.</p>
+<p>This file is the detailed architecture. It is not application code. Nothing here opens a port or creates a database.</p>
+<hr/>
+<h2>One-sentence picture</h2>
+<p>A customer never talks to the database. The Next.js website never talks to the database. Founders in Admin never talk to the database. <strong>Only the Medusa Node process opens PostgreSQL.</strong> Images live in object storage. Card numbers never enter our machines.</p>
+<hr/>
+<h2>The boxes, and what each one is allowed to do</h2>
+<p>Production (after a later host purchase) is <strong>one VPS</strong>, not a cluster.</p>
+<table><thead><tr><th>Process</th><th>Bind</th><th>Job</th><th>Talks to Postgres?</th></tr></thead><tbody><tr><td>Caddy</td><td><code>:443</code> (public), <code>:80</code> redirect</td><td>TLS (Let’s Encrypt). Reverse-proxy only. Does not run shop logic.</td><td><strong>No</strong></td></tr><tr><td>Next.js storefront</td><td><code>127.0.0.1:3000</code></td><td>House UI: landing, collections, PDP, cart, checkout pages. Server-side render + client cart.</td><td><strong>No</strong></td></tr><tr><td>Medusa API + Admin</td><td><code>127.0.0.1:9000</code></td><td>Catalogue, cart, checkout, customers, orders, refunds, inventory. Admin UI at <code>/app</code>.</td><td><strong>Yes — the only client</strong></td></tr><tr><td>PostgreSQL 16+</td><td><code>127.0.0.1:5432</code></td><td>System of record. All durable shop data.</td><td>Itself</td></tr><tr><td>Cloudflare R2</td><td>cloud, S3 API</td><td>Product image bytes. Not SQL.</td><td>No</td></tr><tr><td>Razorpay</td><td>cloud</td><td>Checkout + money movement. We never see PAN/CVV.</td><td>No</td></tr><tr><td>Email (Resend or log)</td><td>cloud or stdout</td><td>Order paid / shipped notices.</td><td>No</td></tr></tbody></table>
+<p>Not on this box: Kubernetes, a second “database server”, Redis (optional later if Admin is slow), this Hermes VPS (<code>srv2023249</code>) as production, Funnel <code>:8080</code> as the shop.</p>
+<pre><code>Internet
+  │
+  │ HTTPS :443
+  ▼
+Caddy  (TLS, reverse proxy)
+  ├─ /            → Next.js :3000     (customers)
+  ├─ /app         → Medusa  :9000     (founders, Admin)
+  ├─ /store, /hooks → Medusa :9000    (Store API + Razorpay webhooks)
+  │
+  Next.js ── HTTP (JS SDK / REST) ──► Medusa
+                                       │
+                                       │ DATABASE_URL
+                                       │ postgres://…@127.0.0.1:5432/valoir
+                                       ▼
+                                   PostgreSQL
+                                       ▲
+                                   nobody else</code></pre>
+<p>Medusa Admin is <strong>not</strong> a separate backend. It is a web UI served by the same Medusa process, talking to the same API, which then talks to Postgres. Founders do not get a <code>psql</code> login.</p>
+<hr/>
+<h2>Database connection — the whole path</h2>
+<h3>Who holds the connection string</h3>
+<p>One environment variable, on the <strong>Medusa</strong> process only:</p>
+<pre><code>DATABASE_URL=postgres://valoir:&lt;password&gt;@127.0.0.1:5432/valoir</code></pre>
+<p>Names, not secrets, also live in <code>.env.example</code> (KUR-004). The real password is never in git, never on kanban, never in chat.</p>
+<table><thead><tr><th>App</th><th>Has <code>DATABASE_URL</code>?</th><th>Has a Postgres driver?</th></tr></thead><tbody><tr><td>Medusa</td><td>Yes</td><td>Yes (Medusa v2 / MikroORM → <code>pg</code>)</td></tr><tr><td>Next.js</td><td><strong>No</strong></td><td><strong>No</strong></td></tr><tr><td>Caddy</td><td>No</td><td>No</td></tr><tr><td>Browser</td><td>No</td><td>No</td></tr><tr><td>Medusa Admin (browser)</td><td>No</td><td>No — it calls Medusa HTTP</td></tr><tr><td>Razorpay</td><td>No</td><td>No</td></tr><tr><td>R2</td><td>No</td><td>No</td></tr></tbody></table>
+<p>If a storefront env file ever contains <code>DATABASE_URL</code>, that is a bug. The storefront’s backend URL looks like this instead:</p>
+<pre><code>MEDUSA_BACKEND_URL=http://127.0.0.1:9000
+NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY=pk_…</code></pre>
+<p>That is an <strong>HTTP</strong> credential, not a database login. It can only do what the Store API allows (read catalogue, manage *this* cart, place *this* order). It cannot <code>SELECT</code> arbitrary tables.</p>
+<h3>Network: Postgres is not on the internet</h3>
+<p>Postgres listens on <strong>localhost only</strong> (<code>listen_addresses = 127.0.0.1</code>, or a Docker bridge that Caddy/Next are not on).</p>
+<table><thead><tr><th>Path</th><th>Allowed?</th></tr></thead><tbody><tr><td>Medusa → <code>127.0.0.1:5432</code></td><td>Yes. This is the only path.</td></tr><tr><td>Next.js → <code>:5432</code></td><td>No. Next.js has no client and no route.</td></tr><tr><td>Caddy → <code>:5432</code></td><td>No. Caddy does not proxy 5432.</td></tr><tr><td>WAN / Tailscale → <code>:5432</code></td><td><strong>No.</strong> UFW default deny. 80/443 only on the shop VPS.</td></tr><tr><td>Founder laptop <code>psql</code> over the internet</td><td>No. Operators use Admin in a browser.</td></tr></tbody></table>
+<p>Same-box Postgres is a deliberate MVP choice (cost + ops). We are <strong>not</strong> using a managed Postgres in year one unless KUR-002’s host decision is later overridden. Because it is same-box, TLS-to-Postgres is not required; the socket never leaves the machine. The public TLS is Caddy → browsers.</p>
+<p>This Hermes agent VPS is <strong>not</strong> that shop box. Local spike (KUR-005) may run Docker Postgres on the agent machine for development. That is still <code>127.0.0.1</code> inside the spike, still not production.</p>
+<h3>How Medusa actually opens it</h3>
+<p>On boot Medusa reads <code>DATABASE_URL</code>, creates a <strong>connection pool</strong> (one Node process, several borrowed TCP connections, default pool size on the order of 10 — not a connection per HTTP request, not PgBouncer at MVP volume). Each Store/Admin request that needs data: borrow connection → query → release.</p>
+<p>There is no second pool in Next.js. There is no Prisma in the storefront. There is no <code>pg</code> import in the storefront.</p>
+<p>If Medusa is down, the website can still *render* chrome, but catalogue, cart, and checkout fail. That is correct: the storefront is not allowed to cache a shadow copy of orders in its own DB, because it does not have one.</p>
+<h3>Migrations — who is allowed to change tables</h3>
+<p>Medusa owns the schema.</p>
+<ol><li>We pin <code>@medusajs/medusa</code> (working pin 2.21.x).</li><li><code>medusa db:migrate</code> (or the compose equivalent) runs Medusa’s migrations against <code>valoir</code>.</li><li>Our extra fields (fabric, care, fit, size chart) go on Medusa product <strong>metadata / attributes</strong>, not on random new databases. Locked in KUR-007 <code>SCHEMA.md</code>.</li><li>Next.js never runs a migration.</li></ol>
+<p>We do not hand-edit production tables. We do not point two Medusa versions at one DB.</p>
+<h3>What lives in Postgres vs what does not</h3>
+<p><strong>In PostgreSQL (system of record):</strong></p>
+<ul><li>Products (named kurta sets) and variants (size × colour)</li><li>Options, metadata: fabric, care, fit, size chart</li><li>Inventory levels per variant</li><li>Carts and line items (guest cart id is a cookie; the rows are in Postgres)</li><li>Customers / auth identities (emails, password hashes — not cards)</li><li>Orders, payments, refunds, fulfillments, tracking number</li><li>Regions, sales channels, API keys (hashed)</li><li>Our Razorpay order id / payment id on the payment session (for idempotency)</li></ul>
+<p><strong>Not in PostgreSQL:</strong></p>
+<ul><li>Image <strong>files</strong> — object storage (R2). Postgres stores the URL / file id only.</li><li>Card numbers, CVV, expiry — Razorpay only. Storing them is out of scope and illegal for us.</li><li>Next.js page cache — memory / Next cache, disposable.</li><li>TLS certificates — Caddy.</li><li>Backups at rest — <code>pg_dump</code> files in R2 (KUR-025), not git.</li></ul>
+<h3>Pooling, load, and what we are not building</h3>
+<p>MVP volume is tens-to-low-hundreds of orders, not a marketplace. One Medusa process + one Postgres on a KVM 4 is the plan. We do not put PgBouncer, read replicas, or “Postgres in another region” on the board. If Admin search feels slow, Redis is the first optional add-on (still not a second source of truth).</p>
+<h3>Backup and restore (the database’s other connection)</h3>
+<p>Daily <code>pg_dump</code> of <code>valoir</code> to R2 (KUR-006 notes, KUR-025 drill). Restore is: create empty DB → apply dump → boot Medusa against it. Next.js does not participate. Launch is blocked until a restore has been <strong>done once</strong>, not until a README mentions dumps.</p>
+<hr/>
+<h2>How the storefront talks to Medusa (HTTP, not SQL)</h2>
+<p>Next.js uses Medusa’s JS SDK / REST against <code>MEDUSA_BACKEND_URL</code>.</p>
+<p>Typical calls:</p>
+<table><thead><tr><th>Customer action</th><th>Storefront does</th><th>Medusa does</th><th>Postgres</th></tr></thead><tbody><tr><td>Open collection</td><td><code>GET /store/products</code> (filtered)</td><td>Read products + variants + stock</td><td><code>SELECT</code></td></tr><tr><td>Open PDP</td><td><code>GET /store/products/:id</code></td><td>Read set + variants + metadata + images</td><td><code>SELECT</code></td></tr><tr><td>Add to cart</td><td><code>POST /store/carts/.../line-items</code></td><td>Create/update cart row, check stock</td><td><code>INSERT/UPDATE</code></td></tr><tr><td>Refresh page</td><td>Send cart cookie / id</td><td>Load that cart</td><td><code>SELECT</code></td></tr><tr><td>Start checkout</td><td><code>POST</code> cart → address + email + phone</td><td>Update cart, create payment session</td><td><code>UPDATE</code></td></tr><tr><td>Pay</td><td>Open Razorpay Checkout with <strong>server-created</strong> order id</td><td>Create Razorpay order via our provider</td><td><code>INSERT</code> payment session</td></tr><tr><td>“Thank you”</td><td><code>GET /store/orders/...</code></td><td>Return order <strong>if paid</strong></td><td><code>SELECT</code></td></tr></tbody></table>
+<p>Publishable key: public, in the browser, scoped to the Store API. It cannot hit Admin routes, cannot dump the customer table, cannot set stock.</p>
+<p>Any <strong>server</strong> Next.js route we add (e.g. to keep secrets off the client) still talks HTTP to Medusa. It still does not get <code>DATABASE_URL</code>.</p>
+<hr/>
+<h2>How Admin talks to the database (it doesn’t)</h2>
+<p>Founder browser → Caddy <code>/app</code> → Medusa Admin JS → Medusa Admin API → Postgres.</p>
+<p>Same Medusa process, different route prefix, different cookie, <strong>role</strong> (owner vs operations, KUR-010).</p>
+<p>What founders do in Admin that becomes SQL:</p>
+<ul><li>Create a kurta set and variants → product / variant rows</li><li>Set stock on size M / colour Soot → inventory level row</li><li>Upload an image → file module writes <strong>bytes to R2</strong>, URL into Postgres</li><li>Mark shipped + tracking → fulfillment row</li><li>Refund → payment refund row + Razorpay API call</li></ul>
+<p>They never see <code>DATABASE_URL</code>. OPERATOR.md is the interface, not <code>psql</code>.</p>
+<hr/>
+<h2>Money path (why the browser is not trusted)</h2>
+<p>This is the architecture that KUR-017 must implement. If it cannot, we switch to Option B; we do not “just mark paid”.</p>
+<ol><li>Checkout page collects India address, email, phone. Next.js sends them to Medusa. Medusa writes a <strong>pending</strong> order / payment session. <strong>No charge.</strong></li><li>Medusa’s Razorpay provider calls Razorpay <code>orders</code> API with amount in <strong>paise</strong> (once, never ×100×100). Razorpay returns <code>order_id</code>. That id is stored on the payment session in Postgres.</li><li>Browser opens Razorpay Checkout with that <code>order_id</code>. Customer pays UPI/card/netbanking <strong>on Razorpay’s page</strong>. PAN/CVV never hit Next.js or Medusa.</li><li>Browser may redirect to <code>/confirmation</code>. That page is <strong>not</strong> allowed to mark the order paid.</li><li>Razorpay sends a <strong>signed webhook</strong> to <code>https://&lt;shop&gt;/hooks/payment/razorpay_razorpay</code> (Caddy → Medusa). Medusa verifies HMAC on the <strong>raw body</strong>. On success: order captured, stock committed, same Razorpay payment id cannot capture twice (unique constraint / idempotency key in Postgres).</li><li>Confirmation page then reads the order and finds it paid. Email fires (or logs, until you approve a provider).</li></ol>
+<p>Replay of the same webhook: one capture. Forged webhook: 4xx. Browser <code>?razorpay_payment_id=</code> without a valid webhook: order stays pending.</p>
+<p>Refund: Admin button → Medusa → Razorpay refund API → payment row updated. Not a SQL <code>UPDATE status=&#x27;refunded&#x27;</code> by a human.</p>
+<hr/>
+<h2>Product model the database must support</h2>
+<p>A T-shirt schema will break the PDP. Locked in KUR-007.</p>
+<p><strong>Product</strong> (one row per named set): title, story, fabric, care, fit notes, size chart, gallery.</p>
+<p><strong>Variant</strong> (one row per sellable SKU): size × colour (optional fit), INR price in the ₹6,000–₹10,000 band, SKU.</p>
+<p><strong>Inventory</strong>: integer on the variant, not on the product. Concurrent checkout of stock=1 → one paid order (KUR-008).</p>
+<p><strong>Images</strong>: bytes in R2; product/variant holds the file id or URL.</p>
+<p>Draft Funnel prices ₹2,450–₹3,850 are <strong>not</strong> loaded as the offer.</p>
+<hr/>
+<h2>Secrets and env (names only)</h2>
+<table><thead><tr><th>Variable</th><th>Lives on</th><th>Purpose</th></tr></thead><tbody><tr><td><code>DATABASE_URL</code></td><td>Medusa</td><td>Postgres login</td></tr><tr><td><code>JWT_SECRET</code> / <code>COOKIE_SECRET</code></td><td>Medusa</td><td>Session signing</td></tr><tr><td><code>RAZORPAY_KEY_ID</code></td><td>Medusa (id may be public in Checkout)</td><td>Razorpay</td></tr><tr><td><code>RAZORPAY_KEY_SECRET</code></td><td>Medusa only</td><td>Razorpay API</td></tr><tr><td><code>RAZORPAY_WEBHOOK_SECRET</code></td><td>Medusa only</td><td>HMAC</td></tr><tr><td><code>S3_*</code> / R2 keys</td><td>Medusa file module</td><td>Images</td></tr><tr><td><code>RESEND_API_KEY</code></td><td>Medusa (after you approve)</td><td>Mail</td></tr><tr><td><code>MEDUSA_BACKEND_URL</code></td><td>Next.js</td><td>HTTP to Medusa</td></tr><tr><td><code>NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY</code></td><td>Next.js (public)</td><td>Store API</td></tr></tbody></table>
+<p>Production <code>.env</code> is on the shop VPS, mode <code>600</code>, not in this repo.</p>
+<hr/>
 <h2>Environments</h2>
-<table><thead><tr><th>Env</th><th>Purpose</th></tr></thead><tbody><tr><td>Local</td><td>Medusa + Postgres + storefront for KUR-005+</td></tr><tr><td>Staging</td><td>Full purchase in Razorpay <strong>test</strong> mode</td></tr><tr><td>Production</td><td>Live keys only after KUR-026 + your approval</td></tr></tbody></table>
-<p>This Hermes VPS is <strong>not</strong> automatically production.</p>
-<h2>Hosting (undecided)</h2>
-<p>KUR-002 must pick with ToS + cost:</p>
-<ul><li>Small commercial VPS (app + Postgres) — likely cheapest honest option</li><li>Managed Postgres + small app host</li><li><strong>Not</strong> a free hobby PaaS if their ToS forbids commercial checkout</li></ul>
-<p>CDN / image host: cheapest commercial-ok object storage. No paid CDN signup without approval.</p>
-<h2>What the diagram is allowed to claim</h2>
-<ul><li>India-first HTTPS storefront</li><li>Medusa as the system of record for products/orders</li><li>Razorpay as the processor</li><li>Manual ship in MVP</li></ul>
-<p>It is <strong>not</strong> allowed to claim: Kubernetes, multi-region, custom data warehouse, WhatsApp stack, live Funnel as the shop.</p>
-<pre><code>flowchart LR
-  C[Customer] --&gt; S[Next.js storefront]
-  O[Operator] --&gt; A[Medusa Admin]
-  S --&gt; M[Medusa API]
-  A --&gt; M
-  M --&gt; P[(PostgreSQL)]
-  M --&gt; I[Object storage]
-  M --&gt; R[Razorpay]
-  R -.-&gt;|signed webhook| M
-  M --&gt; E[Email]</code></pre>
+<table><thead><tr><th>Env</th><th>Postgres</th><th>Razorpay</th><th>Who</th></tr></thead><tbody><tr><td>Local spike (KUR-005)</td><td>Docker or native on the <strong>agent</strong> box, localhost</td><td>Test keys if present, else provider stub</td><td>Developers</td></tr><tr><td>Staging</td><td>Second database or compose project on the <strong>future shop VPS</strong></td><td>Test keys</td><td>Launch proof</td></tr><tr><td>Production</td><td><code>valoir</code> on the shop VPS, localhost</td><td>Live keys only after KUR-026 + you</td><td>Customers</td></tr></tbody></table>
+<p>Same code. Different env files. Staging is not a second paid host in year one. This Hermes box is not production.</p>
+<hr/>
+<h2>Ports and firewall (shop VPS, once it exists)</h2>
+<table><thead><tr><th>Port</th><th>Public?</th></tr></thead><tbody><tr><td>80 / 443</td><td>Yes (Caddy)</td></tr><tr><td>3000, 9000</td><td>No — localhost, Caddy proxies</td></tr><tr><td>5432</td><td>No — localhost</td></tr><tr><td>22</td><td>Admin only, key auth, not password; not a shop feature</td></tr><tr><td>8080</td><td>Unused by the shop. Funnel landing stays on the Hermes box until you cut over</td></tr></tbody></table>
+<p>UFW: default deny in, allow 80/443. Postgres not in the allow list.</p>
+<hr/>
+<h2>Option B — only if A’s kill criterion fires</h2>
+<p>If KUR-017 cannot complete test pay → signed webhook → captured → refund, we stop using Medusa as the engine.</p>
+<p>Then: Next.js still has <strong>no</strong> customer-facing SQL for fun; a small order service <strong>does</strong> get <code>DATABASE_URL</code> (we would write that service). We would also have to write a tiny Admin. Postgres remains localhost. Razorpay remains the processor. The connection rule is the same: <strong>one backend process talks to Postgres; the browser does not.</strong></p>
+<p>We do not run A and B against the same database.</p>
+<hr/>
+<h2>What this architecture refuses</h2>
+<ul><li>Next.js <code>prisma</code> / <code>pg</code> / <code>drizzle</code> against shop orders</li><li>Prisma in the storefront “just for the blog”</li><li>Exposing <code>:5432</code> on WAN or Tailscale “so I can inspect”</li><li>Storing cards “for faster checkout”</li><li>Shopify/Woo as system of record</li><li>Vercel Hobby (ToS forbids commercial checkout)</li><li>Production on the Hermes 2 vCPU box</li><li>Kubernetes, multi-region, a data warehouse</li><li>Funnel <code>valoir.taile13d7b.ts.net</code> silently becoming the shop</li></ul>
 <p class="note">Valoir planning docs · 2026-10-20 · pending KUR-002. Not a production site.</p>
 </div>
 </body>

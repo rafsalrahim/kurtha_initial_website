@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Epics and task breakdown</title>
+<style>
+:root { --ink:#0c0b09; --paper:#f4efe6; --muted:#8a8174; --gold:#c9a227; --line:#2a261f; }
+* { box-sizing: border-box; }
+body { margin:0; font-family: Georgia, "Times New Roman", serif; background:var(--ink); color:var(--paper); line-height:1.55; }
+a { color:var(--gold); }
+.wrap { max-width: 820px; margin: 0 auto; padding: 2.5rem 1.25rem 4rem; }
+nav { font-family: system-ui, sans-serif; font-size: 0.8rem; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); margin-bottom: 2rem; }
+nav a { color: var(--gold); text-decoration: none; margin-right: 1rem; }
+h1,h2,h3 { font-weight: 500; letter-spacing: -0.02em; }
+h1 { font-size: 2rem; margin: 0 0 1rem; }
+h2 { font-size: 1.25rem; margin: 2rem 0 0.75rem; border-top: 1px solid var(--line); padding-top: 1.25rem; }
+h3 { font-size: 1.05rem; margin: 1.4rem 0 0.5rem; }
+p, li { font-size: 1.02rem; }
+ul, ol { padding-left: 1.2rem; }
+code { font-family: ui-monospace, monospace; font-size: 0.85em; background: #1a1814; padding: 0.1em 0.35em; }
+pre { background: #1a1814; padding: 1rem; overflow: auto; font-size: 0.85rem; border: 1px solid var(--line); }
+pre code { background: none; padding: 0; }
+table { border-collapse: collapse; width: 100%; font-size: 0.92rem; margin: 1rem 0; font-family: system-ui, sans-serif; }
+th, td { border: 1px solid var(--line); padding: 0.45rem 0.55rem; text-align: left; vertical-align: top; }
+th { color: var(--gold); font-weight: 600; }
+.note { color: var(--muted); font-size: 0.85rem; margin-top: 3rem; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<nav>
+  <a href="index.html">Hub</a>
+  <a href="overview.html">Overview</a>
+  <a href="architecture.html">Diagram</a>
+  <a href="architecture-notes.html">Architecture</a>
+  <a href="features.html">Features</a>
+  <a href="epics.html">Epics</a>
+  <a href="cost-and-risks.html">Cost</a>
+  <a href="kanban.html">Kanban</a>
+</nav>
+
+<h1>Epics and task breakdown</h1>
+<p>Hermes board: <code>valoir-shop</code>.</p>
+<p>7 epic containers (blocked, not runnable) + 26 tasks <strong>KUR-001 … KUR-026</strong>.</p>
+<p>Epic cards exist so the dashboard shows the shape. Work happens on KUR-* cards only.</p>
+<p>Kanban IDs: see <a href="kanban.md">kanban.md</a>.</p>
+<p>Effort is a <strong>cap</strong>, not a promise. P0 unless noted.</p>
+<p>---</p>
+<h2>EPIC-1 — Architecture and MVP gate</h2>
+<p>Phase 0–1. Nothing in E4+ is assigned until KUR-002 is approved.</p>
+<h3>KUR-001 Inspect repo, landing, environment</h3>
+<ul><li>Effort: 4h. Deps: none. Status at docs time: <strong>completed</strong></li><li>Outcome: <code>/root/valoir-shop/INSPECT.md</code></li><li>Did: host, Funnel 502, valoir-site prototype, empty public git repo, missing docker/postgres/gh, Node 26 vs LTS</li><li>Did not: start :8080, install packages, overwrite landing</li></ul>
+<h3>KUR-002 Architecture, MVP, ₹50k cost (approval gate)</h3>
+<ul><li>Effort: 1d. Deps: KUR-001. <strong>You must approve.</strong></li><li>Produce: ARCHITECTURE.md, MVP.md, COST.md with sources and dates</li><li>Compare Option A (Medusa + Next.js) vs Option B (thin custom)</li><li>Validate Medusa version + Razorpay compatibility + hosting ToS</li><li>Lock brand language</li><li>Worker: <code>kanban_request_review</code>. Do <strong>not</strong> complete</li></ul>
+<h3>KUR-003 PRD, ADRs, diagram, threat checklist</h3>
+<ul><li>Effort: 4h. Deps: KUR-002 approved</li><li>Freeze the decision so later tasks stop re-litigating the stack</li></ul>
+<p>---</p>
+<h2>EPIC-2 — Foundations</h2>
+<h3>KUR-004 Repo layout, env, secrets pattern</h3>
+<ul><li>Effort: 4h. Deps: 003</li><li>Monorepo or apps/storefront + apps/backend. <code>.env.example</code> only. No real keys in git</li></ul>
+<h3>KUR-005 Boot Medusa + Postgres + Admin locally</h3>
+<ul><li>Effort: 1d. Deps: 004</li><li>Pin versions. If Razorpay cannot attach to this Medusa, <strong>block E4</strong> and propose Option B</li></ul>
+<h3>KUR-006 CI stubs, staging/prod config, backup notes (P1)</h3>
+<ul><li>Effort: 4h. Deps: 005</li><li>Lint/test on push. Full restore drill is KUR-025</li></ul>
+<p>---</p>
+<h2>EPIC-3 — Catalogue and Medusa Admin</h2>
+<h3>KUR-007 Kurta-set product model</h3>
+<ul><li>Effort: 1d. Deps: 005</li><li>Size × colour variants. Fabric / care / fit fields. SCHEMA.md</li></ul>
+<h3>KUR-008 Variant inventory and oversell protection</h3>
+<ul><li>Effort: 4h. Deps: 007</li><li>Two concurrent checkouts against stock=1 → one success</li></ul>
+<h3>KUR-009 Image pipeline and sample catalogue</h3>
+<ul><li>Effort: 4h. Deps: 007</li><li>Placeholders allowed. Real photography is outside the ₹50k software cap</li></ul>
+<h3>KUR-010 Admin RBAC and operator guide (P1)</h3>
+<ul><li>Effort: 4h. Deps: 005</li><li>Owner vs operations. OPERATOR.md: add product, stock, fulfil, refund</li></ul>
+<p>---</p>
+<h2>EPIC-4 — Storefront</h2>
+<p>Starts only after KUR-002 approval (enforced: 011 depends on 003 + 005).</p>
+<h3>KUR-011 Storefront shell and design system</h3>
+<ul><li>Effort: 1–2d. Deps: 003, 005</li><li>Tokens, landing, nav, footer, policy stubs</li><li>Must not replace Funnel <code>/root/valoir-site</code> unless you ask</li></ul>
+<h3>KUR-012 Collections and PLP</h3>
+<ul><li>Effort: 1d. Deps: 011, 007</li></ul>
+<h3>KUR-013 PDP</h3>
+<ul><li>Effort: 1d. Deps: 012</li><li>Gallery, variant picker, size chart, fabric, care, fit. Out-of-stock cannot add</li></ul>
+<h3>KUR-014 Cart and session</h3>
+<ul><li>Effort: 1d. Deps: 013</li><li>Guest cart survives refresh. No wishlist</li></ul>
+<h3>KUR-015 SEO, accessibility, mobile performance (P1)</h3>
+<ul><li>Effort: 4h. Deps: 013</li></ul>
+<p>---</p>
+<h2>EPIC-5 — Checkout, payments, fulfilment</h2>
+<p>Purchase path. Reporting UI is not in this epic.</p>
+<h3>KUR-016 Checkout: India address and order create</h3>
+<ul><li>Effort: 1d. Deps: 014, 007</li><li>Creates a pending order. No payment yet</li></ul>
+<h3>KUR-017 Razorpay: webhooks, verify, idempotency</h3>
+<ul><li>Effort: 1–2d. Deps: 016</li><li>Test mode only. Browser success is not enough. No live keys</li><li>Replay webhook must not double-pay</li></ul>
+<h3>KUR-018 Confirmation, history, email</h3>
+<ul><li>Effort: 4h. Deps: 017</li></ul>
+<h3>KUR-019 Refunds and failed payments</h3>
+<ul><li>Effort: 4h. Deps: 017</li></ul>
+<h3>KUR-020 Manual fulfilment and tracking</h3>
+<ul><li>Effort: 4h. Deps: 018</li><li>Packed/shipped + tracking number. No aggregator</li></ul>
+<h3>KUR-021 Returns policy and operator process (P1)</h3>
+<ul><li>Effort: 4h. Deps: 018</li><li>Pages + OPERATOR.md. No returns portal</li></ul>
+<p>---</p>
+<h2>EPIC-6 — Security, compliance, quality</h2>
+<h3>KUR-022 Auth, sessions, rate limits, dependency scan</h3>
+<ul><li>Effort: 1d. Deps: 016</li></ul>
+<h3>KUR-023 Automated tests for purchase and refund</h3>
+<ul><li>Effort: 1d. Deps: 017, 019</li><li>Launch gate needs a repeatable command, not a demo video only</li></ul>
+<h3>KUR-024 India e-commerce 2027 / GST / DPDP checklist</h3>
+<ul><li>Effort: 4h. Deps: 002</li><li>Technical vs professional items. <strong>Not legal advice.</strong> Questions for CA/lawyer</li></ul>
+<h3>KUR-025 Backup restore drill and rollback</h3>
+<ul><li>Effort: 4h. Deps: 006</li><li>Actually restore once. Launch gate requires proof</li></ul>
+<p>---</p>
+<h2>EPIC-7 — Launch</h2>
+<h3>KUR-026 Staging e2e and production launch checklist</h3>
+<ul><li>Effort: 1d. Deps: 015, 020, 023, 024, 025</li><li>Worker: <code>kanban_request_review</code>. Do <strong>not</strong> complete</li><li>No DNS, no live Razorpay, no Funnel cutover without you</li></ul>
+<p>Launch gates:</p>
+<ul><li>Checklist green or explicitly waived by you</li><li>Staging purchase + refund evidence</li><li>Restore + rollback referenced</li><li>Remaining human steps listed: domain, GSTIN, live keys, photography</li></ul>
+<p>---</p>
+<h2>Critical path</h2>
+<pre><code>001 → 002 (APPROVAL) → 003 → 004 → 005 → 007 → 011 → 012 → 013 → 014 → 016 → 017 → 018 → 023 → 026</code></pre>
+<p>Parallel:</p>
+<ul><li>After 005: 006, 010</li><li>After 007: 008, 009</li><li>After 002: 024 (research)</li><li>After 017: 019</li></ul>
+<h2>What is blocked on you</h2>
+<table><thead><tr><th>Gate</th><th>Task</th><th>You do</th></tr></thead><tbody><tr><td>Architecture / money / MVP</td><td>KUR-002</td><td>Approve or request changes</td></tr><tr><td>Git auth / private repo</td><td>—</td><td>Do not paste tokens in chat or on cards</td></tr><tr><td>Paid services</td><td>any</td><td>Explicit yes</td></tr><tr><td>Production</td><td>KUR-026</td><td>Explicit yes</td></tr></tbody></table>
+<p class="note">Valoir planning docs · 2026-10-20 · pending KUR-002. Not a production site.</p>
+</div>
+</body>
+</html>

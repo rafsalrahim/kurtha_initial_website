@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Cost and risks</title>
+<style>
+:root { --ink:#0c0b09; --paper:#f4efe6; --muted:#8a8174; --gold:#c9a227; --line:#2a261f; }
+* { box-sizing: border-box; }
+body { margin:0; font-family: Georgia, "Times New Roman", serif; background:var(--ink); color:var(--paper); line-height:1.55; }
+a { color:var(--gold); }
+.wrap { max-width: 820px; margin: 0 auto; padding: 2.5rem 1.25rem 4rem; }
+nav { font-family: system-ui, sans-serif; font-size: 0.8rem; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); margin-bottom: 2rem; }
+nav a { color: var(--gold); text-decoration: none; margin-right: 1rem; }
+h1,h2,h3 { font-weight: 500; letter-spacing: -0.02em; }
+h1 { font-size: 2rem; margin: 0 0 1rem; }
+h2 { font-size: 1.25rem; margin: 2rem 0 0.75rem; border-top: 1px solid var(--line); padding-top: 1.25rem; }
+h3 { font-size: 1.05rem; margin: 1.4rem 0 0.5rem; }
+p, li { font-size: 1.02rem; }
+ul, ol { padding-left: 1.2rem; }
+code { font-family: ui-monospace, monospace; font-size: 0.85em; background: #1a1814; padding: 0.1em 0.35em; }
+pre { background: #1a1814; padding: 1rem; overflow: auto; font-size: 0.85rem; border: 1px solid var(--line); }
+pre code { background: none; padding: 0; }
+table { border-collapse: collapse; width: 100%; font-size: 0.92rem; margin: 1rem 0; font-family: system-ui, sans-serif; }
+th, td { border: 1px solid var(--line); padding: 0.45rem 0.55rem; text-align: left; vertical-align: top; }
+th { color: var(--gold); font-weight: 600; }
+.note { color: var(--muted); font-size: 0.85rem; margin-top: 3rem; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<nav>
+  <a href="index.html">Hub</a>
+  <a href="overview.html">Overview</a>
+  <a href="architecture.html">Diagram</a>
+  <a href="architecture-notes.html">Architecture</a>
+  <a href="features.html">Features</a>
+  <a href="epics.html">Epics</a>
+  <a href="cost-and-risks.html">Cost</a>
+  <a href="kanban.html">Kanban</a>
+</nav>
+
+<h1>Cost and risks</h1>
+<p>Numbers below are <strong>planning fences</strong>, not a quote. KUR-002 must replace this with dated official prices.</p>
+<h2>Cash cap</h2>
+<p>Initial <strong>cash</strong> ≤ ₹50,000.</p>
+<p>That is for software/hosting/domain-like spend you write a cheque for before the first order. It is <strong>not</strong>:</p>
+<ul><li>Razorpay % (that is per order)</li><li>Product photography</li><li>Fabric, tailoring, inventory</li><li>Paid fonts if we cannot use the prototype stack</li><li>A year of bloated managed services</li></ul>
+<p>Photography is the likely breaker. Treat it as a separate human budget.</p>
+<h2>Recurring (flag, do not hide inside the ₹50k)</h2>
+<table><thead><tr><th>Line</th><th>Nature</th><th>Notes</th></tr></thead><tbody><tr><td>Domain renewal</td><td>Annual</td><td>Buy only after you pick the name</td></tr><tr><td>VPS / app host</td><td>Monthly</td><td>Commercial ToS required. Hobby plans often forbid checkout</td></tr><tr><td>Postgres</td><td>Monthly or bundled on VPS</td><td></td></tr><tr><td>Object storage + bandwidth</td><td>Usage</td><td>Images</td></tr><tr><td>Email API</td><td>Usage</td><td>Not until you approve</td></tr><tr><td>Razorpay</td><td>% + GST on GMV</td><td>Estimate in KUR-002 at ₹6k / ₹8k / ₹10k AOV</td></tr><tr><td>Hermes / AI tools</td><td>Optional</td><td>Not required to run the shop in production</td></tr></tbody></table>
+<h2>Three scenarios KUR-002 must fill</h2>
+<ol><li>Development and testing (this box + test Razorpay) — should be near ₹0 cash if we use what we already have</li><li>Initial production, low volume</li><li>Growth (more images, more orders, still one app)</li></ol>
+<p>Each line: verified price vs estimate, currency, billing period, date of research.</p>
+<h2>Risks (ordered)</h2>
+<ol><li><strong>Medusa v2 × Razorpay</strong> — if the plugin does not exist or lags, cut to Option B before writing UI</li><li><strong>Node 26 vs LTS</strong> — Medusa/Next may refuse this runtime; install Node 22 for the shop</li><li><strong>No Docker / Postgres / compiler on the agent VPS</strong> — KUR-005 is blocked until installed or we develop elsewhere</li><li><strong>Hosting ToS</strong> — free tiers are not a production plan</li><li><strong>2 vCPU / 8 GiB shared with Hermes</strong> — do not assume this Hostinger box is the shop</li><li><strong>Empty public repo</strong> — make private before app secrets exist</li><li><strong>Funnel 502</strong> — public URL looks live and is not; do not confuse it with the shop</li><li><strong>Draft landing prices</strong> — ₹2.4k–₹3.8k vs ₹6k–₹10k commercial band</li><li><strong>Brand language</strong> — brief said chivalric; house rule is luxury/opaque</li><li><strong>Compliance</strong> — KUR-024 is a checklist, not a lawyer</li><li><strong>Secrets in chat or kanban</strong> — already happened once; rotate; never again</li><li><strong>Scope creep</strong> — custom reporting, wishlist, WhatsApp will eat the cap and the calendar</li></ol>
+<h2>Smallest cuts if something blows</h2>
+<table><thead><tr><th>If this fails</th><th>Cut</th></tr></thead><tbody><tr><td>Medusa + Razorpay</td><td>Option B thin order service</td></tr><tr><td>Hosting too expensive</td><td>Single small commercial VPS, Postgres on the same box</td></tr><tr><td>Email paid</td><td>Log + Razorpay receipt until approved</td></tr><tr><td>Images</td><td>Placeholders / existing lookbook with attribution until a shoot</td></tr><tr><td>Time</td><td>Drop P1 (KUR-006 polish, 010 polish, 015, 021) after a written waiver — not the money path</td></tr></tbody></table>
+<h2>You must approve before money leaves</h2>
+<ul><li>Any paid signup</li><li>Domain</li><li>Live Razorpay keys</li><li>DNS</li><li>Production deploy</li><li>Funnel cutover</li></ul>
+<p class="note">Valoir planning docs · 2026-10-20 · pending KUR-002. Not a production site.</p>
+</div>
+</body>
+</html>

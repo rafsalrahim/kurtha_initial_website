@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Valoir shop — architecture</title>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'JetBrains Mono', monospace;
+      background: #020617;
+      min-height: 100vh;
+      padding: 2rem;
+      color: white;
+    }
+    .container { max-width: 1200px; margin: 0 auto; }
+    .header { margin-bottom: 2rem; }
+    .header-row { display: flex; align-items: center; gap: 1rem; margin-bottom: 0.5rem; }
+    .pulse-dot {
+      width: 12px; height: 12px; background: #c9a227;
+      border-radius: 50%; animation: pulse 2s infinite;
+    }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+    h1 { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.025em; }
+    .subtitle { color: #94a3b8; font-size: 0.875rem; margin-left: 1.75rem; }
+    .diagram-container {
+      background: rgba(15, 23, 42, 0.5);
+      border-radius: 1rem;
+      border: 1px solid #1e293b;
+      padding: 1.5rem;
+      overflow-x: auto;
+    }
+    svg { width: 100%; min-width: 900px; display: block; }
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1rem;
+      margin-top: 2rem;
+    }
+    .card {
+      background: rgba(15, 23, 42, 0.5);
+      border-radius: 0.75rem;
+      border: 1px solid #1e293b;
+      padding: 1.25rem;
+    }
+    .card-header { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem; }
+    .card-dot { width: 8px; height: 8px; border-radius: 50%; }
+    .card-dot.cyan { background: #22d3ee; }
+    .card-dot.emerald { background: #34d399; }
+    .card-dot.violet { background: #a78bfa; }
+    .card-dot.amber { background: #fbbf24; }
+    .card-dot.rose { background: #fb7185; }
+    .card h3 { font-size: 0.875rem; font-weight: 600; }
+    .card ul { list-style: none; color: #94a3b8; font-size: 0.75rem; }
+    .card li { margin-bottom: 0.375rem; }
+    .footer { text-align: center; margin-top: 1.5rem; color: #475569; font-size: 0.75rem; }
+    .nav { margin-bottom: 1.5rem; font-size: 0.75rem; color: #94a3b8; }
+    .nav a { color: #c9a227; text-decoration: none; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <p class="nav"><a href="index.html">Docs hub</a> · pending KUR-002 approval</p>
+    <div class="header">
+      <div class="header-row">
+        <div class="pulse-dot"></div>
+        <h1>Valoir shop architecture</h1>
+      </div>
+      <p class="subtitle">Option A — Medusa v2 + Next.js + Postgres + Razorpay. India first. Not approved.</p>
+    </div>
+
+    <div class="diagram-container">
+      <svg viewBox="0 0 1100 700">
+        <defs>
+          <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="#64748b" />
+          </marker>
+          <marker id="arrow-rose" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="#fb7185" />
+          </marker>
+          <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+            <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#1e293b" stroke-width="0.5"/>
+          </pattern>
+        </defs>
+
+        <rect width="100%" height="100%" fill="url(#grid)" />
+
+        <!-- arrows first so boxes sit on top -->
+        <line x1="150" y1="250" x2="218" y2="250" stroke="#22d3ee" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+        <text x="184" y="242" fill="#94a3b8" font-size="8" text-anchor="middle">HTTPS</text>
+
+        <line x1="360" y1="250" x2="428" y2="250" stroke="#34d399" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+        <text x="394" y="242" fill="#94a3b8" font-size="8" text-anchor="middle">JS SDK / REST</text>
+
+        <line x1="150" y1="430" x2="428" y2="318" stroke="#34d399" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+        <text x="240" y="400" fill="#94a3b8" font-size="8">Admin session</text>
+
+        <line x1="580" y1="250" x2="668" y2="250" stroke="#a78bfa" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+        <text x="624" y="242" fill="#94a3b8" font-size="8" text-anchor="middle">SQL</text>
+
+        <line x1="505" y1="300" x2="505" y2="378" stroke="#fbbf24" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+        <text x="518" y="345" fill="#94a3b8" font-size="8">images</text>
+
+        <line x1="560" y1="280" x2="668" y2="430" stroke="#fb7185" stroke-width="1.5" stroke-dasharray="5,5" marker-end="url(#arrow-rose)"/>
+        <text x="640" y="360" fill="#fb7185" font-size="8">create order</text>
+
+        <path d="M 730 460 L 730 500 Q 730 520 710 520 L 560 520 Q 540 520 540 500 L 540 300" fill="none" stroke="#fb7185" stroke-width="1.5" stroke-dasharray="5,5" marker-end="url(#arrow-rose)"/>
+        <text x="620" y="512" fill="#fb7185" font-size="8">signed webhook (idempotent)</text>
+
+        <line x1="560" y1="210" x2="668" y2="130" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+        <text x="640" y="160" fill="#94a3b8" font-size="8">mail</text>
+
+        <!-- owned host boundary -->
+        <rect x="200" y="40" width="860" height="620" rx="12" fill="rgba(251, 191, 36, 0.05)" stroke="#fbbf24" stroke-width="1" stroke-dasharray="8,4"/>
+        <text x="214" y="62" fill="#fbbf24" font-size="10" font-weight="600">Owned production — host TBD in KUR-002 (not this Hermes VPS by default)</text>
+
+        <!-- customers -->
+        <rect x="30" y="220" width="120" height="60" rx="6" fill="#0f172a"/>
+        <rect x="30" y="220" width="120" height="60" rx="6" fill="rgba(30, 41, 59, 0.5)" stroke="#94a3b8" stroke-width="1.5"/>
+        <text x="90" y="244" fill="white" font-size="11" font-weight="600" text-anchor="middle">Customer</text>
+        <text x="90" y="262" fill="#94a3b8" font-size="9" text-anchor="middle">Phone / desktop</text>
+
+        <!-- operators -->
+        <rect x="30" y="400" width="120" height="60" rx="6" fill="#0f172a"/>
+        <rect x="30" y="400" width="120" height="60" rx="6" fill="rgba(30, 41, 59, 0.5)" stroke="#94a3b8" stroke-width="1.5"/>
+        <text x="90" y="424" fill="white" font-size="11" font-weight="600" text-anchor="middle">Founders</text>
+        <text x="90" y="442" fill="#94a3b8" font-size="9" text-anchor="middle">Non-dev operators</text>
+
+        <!-- storefront -->
+        <rect x="220" y="200" width="140" height="100" rx="6" fill="#0f172a"/>
+        <rect x="220" y="200" width="140" height="100" rx="6" fill="rgba(8, 51, 68, 0.4)" stroke="#22d3ee" stroke-width="1.5"/>
+        <text x="290" y="228" fill="white" font-size="12" font-weight="600" text-anchor="middle">Storefront</text>
+        <text x="290" y="248" fill="#94a3b8" font-size="9" text-anchor="middle">Next.js + TS</text>
+        <text x="290" y="264" fill="#94a3b8" font-size="9" text-anchor="middle">PLP / PDP / cart</text>
+        <text x="290" y="284" fill="#22d3ee" font-size="8" text-anchor="middle">luxury house UI</text>
+
+        <!-- medusa api -->
+        <rect x="430" y="200" width="150" height="100" rx="6" fill="#0f172a"/>
+        <rect x="430" y="200" width="150" height="100" rx="6" fill="rgba(6, 78, 59, 0.4)" stroke="#34d399" stroke-width="1.5"/>
+        <text x="505" y="228" fill="white" font-size="12" font-weight="600" text-anchor="middle">Medusa API</text>
+        <text x="505" y="248" fill="#94a3b8" font-size="9" text-anchor="middle">v2 commerce engine</text>
+        <text x="505" y="264" fill="#94a3b8" font-size="9" text-anchor="middle">cart · orders · stock</text>
+        <text x="505" y="284" fill="#34d399" font-size="8" text-anchor="middle">system of record</text>
+
+        <!-- admin -->
+        <rect x="430" y="330" width="150" height="70" rx="6" fill="#0f172a"/>
+        <rect x="430" y="330" width="150" height="70" rx="6" fill="rgba(8, 51, 68, 0.4)" stroke="#22d3ee" stroke-width="1.5"/>
+        <text x="505" y="358" fill="white" font-size="11" font-weight="600" text-anchor="middle">Medusa Admin</text>
+        <text x="505" y="376" fill="#94a3b8" font-size="9" text-anchor="middle">products · fulfil · refund</text>
+        <text x="505" y="390" fill="#22d3ee" font-size="8" text-anchor="middle">no custom BI in MVP</text>
+
+        <!-- postgres -->
+        <rect x="670" y="215" width="140" height="70" rx="6" fill="#0f172a"/>
+        <rect x="670" y="215" width="140" height="70" rx="6" fill="rgba(76, 29, 149, 0.4)" stroke="#a78bfa" stroke-width="1.5"/>
+        <text x="740" y="244" fill="white" font-size="12" font-weight="600" text-anchor="middle">PostgreSQL</text>
+        <text x="740" y="264" fill="#94a3b8" font-size="9" text-anchor="middle">catalogue · orders</text>
+
+        <!-- email -->
+        <rect x="670" y="90" width="140" height="60" rx="6" fill="#0f172a"/>
+        <rect x="670" y="90" width="140" height="60" rx="6" fill="rgba(30, 41, 59, 0.5)" stroke="#94a3b8" stroke-width="1.5"/>
+        <text x="740" y="114" fill="white" font-size="11" font-weight="600" text-anchor="middle">Email</text>
+        <text x="740" y="132" fill="#94a3b8" font-size="9" text-anchor="middle">after approval</text>
+
+        <!-- images -->
+        <rect x="430" y="430" width="150" height="60" rx="6" fill="#0f172a"/>
+        <rect x="430" y="430" width="150" height="60" rx="6" fill="rgba(120, 53, 15, 0.3)" stroke="#fbbf24" stroke-width="1.5"/>
+        <text x="505" y="454" fill="white" font-size="11" font-weight="600" text-anchor="middle">Object storage</text>
+        <text x="505" y="472" fill="#94a3b8" font-size="9" text-anchor="middle">product images</text>
+
+        <!-- razorpay security group -->
+        <rect x="650" y="390" width="180" height="100" rx="8" fill="transparent" stroke="#fb7185" stroke-width="1" stroke-dasharray="4,4"/>
+        <text x="662" y="408" fill="#fb7185" font-size="8">no card data on our side</text>
+        <rect x="670" y="418" width="140" height="56" rx="6" fill="#0f172a"/>
+        <rect x="670" y="418" width="140" height="56" rx="6" fill="rgba(136, 19, 55, 0.4)" stroke="#fb7185" stroke-width="1.5"/>
+        <text x="740" y="442" fill="white" font-size="11" font-weight="600" text-anchor="middle">Razorpay</text>
+        <text x="740" y="458" fill="#94a3b8" font-size="9" text-anchor="middle">UPI / cards / NB</text>
+
+        <!-- legend -->
+        <text x="230" y="560" fill="white" font-size="10" font-weight="600">Legend</text>
+        <rect x="230" y="572" width="16" height="10" rx="2" fill="rgba(8, 51, 68, 0.4)" stroke="#22d3ee" stroke-width="1"/>
+        <text x="252" y="580" fill="#94a3b8" font-size="8">Frontend</text>
+        <rect x="230" y="588" width="16" height="10" rx="2" fill="rgba(6, 78, 59, 0.4)" stroke="#34d399" stroke-width="1"/>
+        <text x="252" y="596" fill="#94a3b8" font-size="8">Backend</text>
+        <rect x="230" y="604" width="16" height="10" rx="2" fill="rgba(76, 29, 149, 0.4)" stroke="#a78bfa" stroke-width="1"/>
+        <text x="252" y="612" fill="#94a3b8" font-size="8">Database</text>
+        <rect x="340" y="572" width="16" height="10" rx="2" fill="rgba(120, 53, 15, 0.3)" stroke="#fbbf24" stroke-width="1"/>
+        <text x="362" y="580" fill="#94a3b8" font-size="8">Storage / host</text>
+        <rect x="340" y="588" width="16" height="10" rx="2" fill="rgba(136, 19, 55, 0.4)" stroke="#fb7185" stroke-width="1"/>
+        <text x="362" y="596" fill="#94a3b8" font-size="8">Payments</text>
+        <line x1="340" y1="612" x2="356" y2="612" stroke="#fb7185" stroke-width="1" stroke-dasharray="3,3"/>
+        <text x="362" y="615" fill="#94a3b8" font-size="8">Signed webhook</text>
+      </svg>
+    </div>
+
+    <div class="cards">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-dot cyan"></div>
+          <h3>Customer path</h3>
+        </div>
+        <ul>
+          <li>• Next.js storefront only talks to Medusa</li>
+          <li>• Browser “paid” is ignored</li>
+          <li>• Hangtag data lives on the PDP (size, fabric, care, fit)</li>
+          <li>• Guest + account cart in MVP; no wishlist</li>
+        </ul>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <div class="card-dot emerald"></div>
+          <h3>System of record</h3>
+        </div>
+        <ul>
+          <li>• Medusa + Postgres own products, stock, orders</li>
+          <li>• Medusa Admin for founders (no custom BI)</li>
+          <li>• Manual fulfil + tracking field</li>
+          <li>• Option B only if Razorpay cannot attach</li>
+        </ul>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <div class="card-dot rose"></div>
+          <h3>Money</h3>
+        </div>
+        <ul>
+          <li>• Razorpay test mode until you approve live keys</li>
+          <li>• Signed webhooks, idempotent, no card storage</li>
+          <li>• Cash cap ₹50,000 — % fees are separate</li>
+          <li>• KUR-002 must still beat this against Option B</li>
+        </ul>
+      </div>
+    </div>
+
+    <p class="footer">Valoir · planning docs 2026-10-20 · not a production deploy</p>
+  </div>
+</body>
+</html>

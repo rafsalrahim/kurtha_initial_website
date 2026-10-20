@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Kanban map</title>
+<style>
+:root { --ink:#0c0b09; --paper:#f4efe6; --muted:#8a8174; --gold:#c9a227; --line:#2a261f; }
+* { box-sizing: border-box; }
+body { margin:0; font-family: Georgia, "Times New Roman", serif; background:var(--ink); color:var(--paper); line-height:1.55; }
+a { color:var(--gold); }
+.wrap { max-width: 820px; margin: 0 auto; padding: 2.5rem 1.25rem 4rem; }
+nav { font-family: system-ui, sans-serif; font-size: 0.8rem; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); margin-bottom: 2rem; }
+nav a { color: var(--gold); text-decoration: none; margin-right: 1rem; }
+h1,h2,h3 { font-weight: 500; letter-spacing: -0.02em; }
+h1 { font-size: 2rem; margin: 0 0 1rem; }
+h2 { font-size: 1.25rem; margin: 2rem 0 0.75rem; border-top: 1px solid var(--line); padding-top: 1.25rem; }
+h3 { font-size: 1.05rem; margin: 1.4rem 0 0.5rem; }
+p, li { font-size: 1.02rem; }
+ul, ol { padding-left: 1.2rem; }
+code { font-family: ui-monospace, monospace; font-size: 0.85em; background: #1a1814; padding: 0.1em 0.35em; }
+pre { background: #1a1814; padding: 1rem; overflow: auto; font-size: 0.85rem; border: 1px solid var(--line); }
+pre code { background: none; padding: 0; }
+table { border-collapse: collapse; width: 100%; font-size: 0.92rem; margin: 1rem 0; font-family: system-ui, sans-serif; }
+th, td { border: 1px solid var(--line); padding: 0.45rem 0.55rem; text-align: left; vertical-align: top; }
+th { color: var(--gold); font-weight: 600; }
+.note { color: var(--muted); font-size: 0.85rem; margin-top: 3rem; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<nav>
+  <a href="index.html">Hub</a>
+  <a href="overview.html">Overview</a>
+  <a href="architecture.html">Diagram</a>
+  <a href="architecture-notes.html">Architecture</a>
+  <a href="features.html">Features</a>
+  <a href="epics.html">Epics</a>
+  <a href="cost-and-risks.html">Cost</a>
+  <a href="kanban.html">Kanban</a>
+</nav>
+
+<h1>Kanban map</h1>
+<p>Board slug: <strong>valoir-shop</strong></p>
+<p>Dashboard: http://valoir:9119 (Tailscale). Switch the board dropdown to <strong>Valoir Shop</strong>.</p>
+<p>Do not use the <strong>Ideas</strong> board for this work (that board runs council, not build).</p>
+<h2>IDs</h2>
+<table><thead><tr><th>Key</th><th>Task id</th></tr></thead><tbody><tr><td>EPIC-1</td><td>t_343f763f</td></tr><tr><td>EPIC-2</td><td>t_31e74302</td></tr><tr><td>EPIC-3</td><td>t_1c95cb60</td></tr><tr><td>EPIC-4</td><td>t_3af65914</td></tr><tr><td>EPIC-5</td><td>t_149082da</td></tr><tr><td>EPIC-6</td><td>t_ad0f5d23</td></tr><tr><td>EPIC-7</td><td>t_080e42dd</td></tr><tr><td>KUR-001</td><td>t_e3824947</td></tr><tr><td>KUR-002</td><td>t_b1ed39e5</td></tr><tr><td>KUR-003</td><td>t_a8afa09e</td></tr><tr><td>KUR-004</td><td>t_5d8417be</td></tr><tr><td>KUR-005</td><td>t_d985df86</td></tr><tr><td>KUR-006</td><td>t_24f4de32</td></tr><tr><td>KUR-007</td><td>t_fa23c6d5</td></tr><tr><td>KUR-008</td><td>t_3b39dc23</td></tr><tr><td>KUR-009</td><td>t_7e9b9e83</td></tr><tr><td>KUR-010</td><td>t_5d808e45</td></tr><tr><td>KUR-011</td><td>t_9ec658b3</td></tr><tr><td>KUR-012</td><td>t_2a47411c</td></tr><tr><td>KUR-013</td><td>t_e641ea2c</td></tr><tr><td>KUR-014</td><td>t_2f1eb6cb</td></tr><tr><td>KUR-015</td><td>t_066f9750</td></tr><tr><td>KUR-016</td><td>t_2b15ea49</td></tr><tr><td>KUR-017</td><td>t_fbe69c8c</td></tr><tr><td>KUR-018</td><td>t_4ee2a93e</td></tr><tr><td>KUR-019</td><td>t_b802198f</td></tr><tr><td>KUR-020</td><td>t_f02c1496</td></tr><tr><td>KUR-021</td><td>t_e1fe8006</td></tr><tr><td>KUR-022</td><td>t_f1f6ac33</td></tr><tr><td>KUR-023</td><td>t_6dca0f34</td></tr><tr><td>KUR-024</td><td>t_604255de</td></tr><tr><td>KUR-025</td><td>t_a9d92dcd</td></tr><tr><td>KUR-026</td><td>t_a7016323</td></tr></tbody></table>
+<p>Epic containers are <strong>blocked</strong> on purpose (not executable).</p>
+<h2>Dispatch rules we set</h2>
+<ul><li>Only KUR-001 started immediately (inspect — completed)</li><li>KUR-002 is assigned and waits on 001, then <strong>Review</strong> for you</li><li>KUR-003…026 stay unassigned so storefront cannot start until you approve 002</li></ul>
+<h2>Critical path</h2>
+<p>001 → 002 (you) → 003 → 004 → 005 → 007 → 011 → 012 → 013 → 014 → 016 → 017 → 018 → 023 → 026</p>
+<h2>Telegram (ideas only)</h2>
+<p>Shop work is this board. Idea dumps:</p>
+<p><code>/kanban --board ideas create --assignee default --skill idea-inbox &quot;title&quot;</code></p>
+<p>Type the full line even if Telegram’s slash menu does not list <code>/kanban</code>.</p>
+<p class="note">Valoir planning docs · 2026-10-20 · pending KUR-002. Not a production site.</p>
+</div>
+</body>
+</html>

@@ -1,35 +1,33 @@
-# Valoir shop — planning docs
+# Valoir shop
 
-Valoir is a premium men's kurta house (India first, ₹6,000–₹10,000 per set). This repository currently holds **the plan**, not the storefront.
+Premium men’s kurta house. India first. Planned ₹6,000–₹10,000 per set.
 
-There is no application code yet. The GitHub repo was empty on 2026-10-20. Implementation is gated on **KUR-002** (architecture / MVP / cost) being approved by Rafsal.
+This repository is now **docs + a sample storefront**. It is not a live shop.
 
-## Read this first
+## Layout
 
-| File | What it is |
-|------|------------|
-| [docs/overview.md](docs/overview.md) | Why this shape, constraints, what we will not do yet |
-| [docs/architecture.md](docs/architecture.md) | Processes, Postgres connection, data flows |
-| [docs/html/architecture.html](docs/html/architecture.html) | Visual: system + database connection diagrams |
-| [docs/features.md](docs/features.md) | MVP vs later, mapped to tasks |
-| [docs/epics.md](docs/epics.md) | Full epic plans: what each epic is, every KUR task in detail |
-| [docs/html/epics.html](docs/html/epics.html) | Same, readable HTML |
-| [docs/html/features.html](docs/html/features.html) | Feature list as HTML |
-| [docs/html/index.html](docs/html/index.html) | HTML hub |
-| [docs/cost-and-risks.md](docs/cost-and-risks.md) | ₹50k cash cap, recurring vs cash, risks |
-| [docs/kanban.md](docs/kanban.md) | Board map, IDs, critical path |
+| Path | What |
+|---|---|
+| `docs/` | Research, ADRs, PRD, design system, backlog |
+| `storefront/` | Next.js 15 house UI, sample catalogue |
+| `backend/` | Reserved for Medusa (not booted) |
+| `.env.example` | Names only |
 
-Open `docs/html/index.html` locally if you want one place to click through.
+## Run the storefront
 
-## Status
+```
+cd storefront && npm install && npm run dev
+```
 
-- Kanban board: `valoir-shop` (not the Ideas board)
-- Tasks: KUR-001 … KUR-026 plus 7 epic containers
-- KUR-001 inspect: done
-- Next: KUR-002 — you approve before any storefront or payment work
+Open http://127.0.0.1:3000. Do **not** point Funnel at it. Funnel stays on `/root/valoir-site`.
 
-## Rules
+## Locked decisions
 
-- No purchases, DNS, production deploy, or real payments without explicit approval
-- Secrets never go in this repo, in chat, or on the kanban board
-- Existing Funnel landing (`valoir-site`) is not this project and must not be overwritten blindly
+- Stack A: Medusa v2.21 + Next.js + Postgres + in-repo Razorpay. `docs/adrs.md`
+- Voice: luxury / hangtag. No knight language.
+- No live payments, DNS, or production VPS without a later yes.
+- GitHub repo should be made **private** off-board (it was public when empty).
+
+## Status 2026-10-24
+
+KUR-001 and KUR-002 done. Storefront shell (KUR-011–014) is running against sample data. Medusa boot (KUR-005) is blocked on Node 22 + Postgres/Docker on this agent box.

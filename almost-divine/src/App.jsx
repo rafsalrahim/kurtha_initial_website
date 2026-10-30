@@ -2,7 +2,6 @@ import { useEffect } from 'react'
 import { Route, Routes, useLocation } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import Header from './components/Header.jsx'
-import MenuDrawer from './components/MenuDrawer.jsx'
 import CartDrawer from './components/CartDrawer.jsx'
 import SearchOverlay from './components/SearchOverlay.jsx'
 import Home from './pages/Home.jsx'
@@ -20,8 +19,8 @@ const fade = {
 export default function App() {
   const loc = useLocation()
   const home = loc.pathname === '/'
-  const { menuOpen, cartOpen, searchOpen, closeAll } = useStore()
-  const locked = menuOpen || cartOpen || searchOpen
+  const { cartOpen, searchOpen, closeAll } = useStore()
+  const locked = cartOpen || searchOpen
 
   useEffect(() => {
     const onKey = (e) => {
@@ -41,7 +40,6 @@ export default function App() {
   return (
     <div className="app">
       <Header />
-      <MenuDrawer />
       <CartDrawer />
       <SearchOverlay />
       {home ? (

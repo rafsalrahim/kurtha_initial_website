@@ -8,6 +8,7 @@ export function StoreProvider({ children }) {
   const [menuOpen, setMenuOpen] = useState(false)
   const [cartOpen, setCartOpen] = useState(false)
   const [searchOpen, setSearchOpen] = useState(false)
+  const [homeIndex, setHomeIndex] = useState(0)
 
   const closeAll = useCallback(() => {
     setMenuOpen(false)
@@ -64,9 +65,11 @@ export function StoreProvider({ children }) {
       setCartOpen,
       searchOpen,
       setSearchOpen,
+      homeIndex,
+      setHomeIndex,
       closeAll,
     }),
-    [cart, count, total, add, setQty, saved, toggleSave, menuOpen, cartOpen, searchOpen, closeAll],
+    [cart, count, total, add, setQty, saved, toggleSave, menuOpen, cartOpen, searchOpen, homeIndex, closeAll],
   )
 
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>

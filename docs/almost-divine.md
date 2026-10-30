@@ -12,16 +12,11 @@ This is a separate UI experiment from the Valoir Next.js sample in `/storefront`
 
 ## What was taken from the reference
 
-Chrome first: Almost Gods uses a **centered wordmark** header (`header--center-logo`) — hamburger left, wordmark center, Search/Cart right. No top tabs.
+Chrome: centered wordmark, Search/Cart right. Nav links sit in the photo (no hamburger). Hover uses a bone/ivory wash that follows the current still.
 
-Homepage modules, in their order:
+Homepage: full-viewport campaign pages, overlay copy, then footer. No product grid on home.
 
-1. Full-viewport **media banners**, stacked sticky (`sticky-section`), overlay copy (kicker, title, Discover, scroll hint)
-2. Footer
-
-No product grid on home. No announcement bar cloned.
-
-Motion: as you scroll, the next banner covers the last; the stuck image scales slightly and copy fades. Page changes fade. Drawers slide.
+Motion is a Kindle / House of Errors vertical turn: the current page stays, the next slides up over it in 700ms. Wheel, swipe, or arrows. No image zoom. If a page is idle 10s, it advances.
 
 Colour posture only: light page, black ink, black buttons, `#f4f4f4` secondary. Not Inter. Not their −0.3em heading tracking. Not their photography.
 
@@ -47,7 +42,7 @@ Colour posture only: light page, black ink, black buttons, `#f4f4f4` secondary. 
 almost-divine/
   src/data.js            catalogue + banner list
   src/store.jsx          cart, bookmark, drawers
-  src/pages/Home.jsx     sticky campaign stack
+  src/pages/Home.jsx     vertical page-turn campaign
   src/pages/Shop.jsx     2-col cards + overlapping deck
   src/pages/Product.jsx  hangtag PDP
   src/pages/About.jsx
@@ -59,7 +54,7 @@ almost-divine/
 
 See `almost-divine/README.md`.
 
-Marker in `index.html`: `almost-divine-v2`. After a visual change, bump that comment and the `?v=` query.
+Marker in `index.html`: `almost-divine-v9`. After a visual change, bump that comment and the `?v=` query.
 
 ## Relation to Valoir shop plan
 

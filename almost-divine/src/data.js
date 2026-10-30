@@ -67,53 +67,70 @@ export const products = [
   },
 ]
 
-export const banners = [
+export const chapters = [
   {
     id: 'weekday',
+    kind: 'full',
     src: '/img/h-black.jpg',
     kicker: 'Vol. 01',
     title: 'Weekday',
     cta: 'Discover',
-    hint: 'Scroll to explore',
+    hint: 'Scroll',
     to: '/shop',
     ink: 'light',
+    wash: '#f3ebe0',
   },
   {
     id: 'sand',
+    kind: 'full',
     src: '/img/h-brown.jpg',
     kicker: 'Vol. 01',
     title: 'Sand',
     cta: 'Discover',
     to: '/shop/sand',
     ink: 'dark',
+    wash: '#f6ead4',
   },
   {
     id: 'cloth',
+    kind: 'full',
     src: '/img/h-cloth.jpg',
     kicker: 'The hand',
     title: 'Cloth',
     cta: 'Discover',
     to: '/shop',
     ink: 'light',
+    wash: '#efe6d8',
   },
   {
     id: 'ivory',
+    kind: 'full',
     src: '/img/h-white.jpg',
     kicker: 'Vol. 01',
     title: 'Ivory',
     cta: 'Discover',
     to: '/shop/ivory',
     ink: 'dark',
+    wash: '#f7f1e8',
   },
   {
     id: 'night',
+    kind: 'full',
     src: '/img/p-black.jpg',
     kicker: 'Vol. 01',
     title: 'Night',
     cta: 'Discover',
     to: '/shop/soot',
     ink: 'light',
+    wash: '#f3ebe0',
   },
+]
+
+export const nav = [
+  { to: '/shop', label: 'Shop' },
+  { to: '/shop?c=weekday', label: 'Weekday', hideSm: true },
+  { to: '/shop?c=evening', label: 'Evening', hideSm: true },
+  { to: '/about', label: 'About' },
 ]
 
 export const collections = [

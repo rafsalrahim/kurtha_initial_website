@@ -2,6 +2,12 @@
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 import os
+import signal
+
+# persist_on_release keeps this process after the agent session ends;
+# stdout/stderr pipes close, and the next request's log write used to
+# SIGPIPE the server into an accept-then-empty-reply state.
+signal.signal(signal.SIGPIPE, signal.SIG_IGN)
 
 ROOT = Path(__file__).resolve().parent / "dist"
 PORT = int(os.environ.get("PORT", "8081"))
@@ -10,6 +16,12 @@ PORT = int(os.environ.get("PORT", "8081"))
 class Handler(SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, directory=str(ROOT), **kwargs)
+
+    def log_message(self, format, *args):
+        try:
+            super().log_message(format, *args)
+        except (BrokenPipeError, OSError):
+            pass
 
     def end_headers(self):
         self.send_header("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0")

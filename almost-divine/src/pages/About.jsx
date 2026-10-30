@@ -2,7 +2,7 @@ import Footer from '../components/Footer.jsx'
 
 export default function About() {
   return (
-    <main className="page">
+    <main className="page" id="content">
       <div className="about">
         <h1 className="page-title">The house</h1>
         <p>Almost Divine makes men’s kurtas. Cloth for the week. Not wedding wear.</p>

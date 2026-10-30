@@ -39,6 +39,7 @@ export default function App() {
 
   return (
     <div className="app">
+      <a className="skip" href="#content">Skip to content</a>
       <Header />
       <CartDrawer />
       <SearchOverlay />

@@ -21,7 +21,7 @@ export default function Product() {
 
   if (!product) {
     return (
-      <main className="page">
+      <main className="page" id="content">
         <div className="page-inner">
           <p>Not in this drop.</p>
           <Link to="/shop">Back to shop</Link>
@@ -31,7 +31,7 @@ export default function Product() {
   }
 
   return (
-    <main className="page">
+    <main className="page" id="content">
       <div className="page-inner">
         <div className="pdp">
           <div className="pdp-gallery">

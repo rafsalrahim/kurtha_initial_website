@@ -38,7 +38,19 @@ input { font: inherit; color: inherit; background: none; border: 0; }
   font-weight: 500;
 }
 
-.app { min-height: 100%; }
+.skip {
+  position: absolute;
+  left: 12px;
+  top: -40px;
+  z-index: 100;
+  background: #fff;
+  color: #111;
+  padding: 8px 12px;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.skip:focus { top: 12px; }
 
 .header {
   position: fixed;
@@ -57,9 +69,15 @@ input { font: inherit; color: inherit; background: none; border: 0; }
   color: var(--ink);
   border-bottom: 1px solid var(--line);
 }
-.header.overlay { background: transparent; }
+.header.overlay {
+  background: transparent;
+  text-shadow: 0 1px 14px rgba(0, 0, 0, 0.4);
+}
 .header.overlay.ink-light { color: #fff; }
-.header.overlay.ink-dark { color: #111; }
+.header.overlay.ink-dark {
+  color: #111;
+  text-shadow: 0 1px 12px rgba(255, 255, 255, 0.55);
+}
 .header-left, .header-right {
   display: flex;
   align-items: center;
@@ -217,8 +235,34 @@ input { font: inherit; color: inherit; background: none; border: 0; }
 .banner-end {
   background: var(--bg);
   overflow: auto;
-  align-content: end;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  color: var(--ink);
 }
+.end-card {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 96px 24px 48px;
+  gap: 16px;
+}
+.end-copy {
+  color: var(--mute);
+  font-size: 15px;
+}
+.end-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  width: min(320px, 100%);
+  margin-top: 8px;
+}
+.end-card .btn-black { margin-top: 8px; }
 .banner-media {
   position: absolute;
   inset: 0;
@@ -352,6 +396,13 @@ input { font: inherit; color: inherit; background: none; border: 0; }
   opacity: 0.35;
   transition: opacity 0.4s var(--ease);
 }
+.ticks li button {
+  color: inherit;
+  letter-spacing: inherit;
+  font-size: inherit;
+  opacity: inherit;
+  padding: 4px 0;
+}
 .ticks li.on { opacity: 0.95; }
 @media (max-width: 720px) {
   .ticks { right: 8px; }
@@ -394,9 +445,14 @@ input { font: inherit; color: inherit; background: none; border: 0; }
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transition: transform 0.8s var(--ease);
 }
-.card:hover .card-photo img { transform: scale(1.04); }
+.card-photo .shot-b {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 0.55s var(--ease);
+}
+.card:hover .shot-b { opacity: 1; }
 .card-add {
   position: absolute;
   right: 10px;

@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { collections, formatPrice, products } from '../data.js'
 import { useStore } from '../store.jsx'
@@ -7,11 +8,12 @@ export default function Shop() {
   const [params] = useSearchParams()
   const nav = useNavigate()
   const filter = params.get('c') || 'all'
-  const { add, saved, toggleSave } = useStore()
+  const { saved, toggleSave } = useStore()
   const list = filter === 'all' ? products : products.filter((p) => p.collection === filter)
+  const [hover, setHover] = useState(null)
 
   return (
-    <main className="page">
+    <main className="page" id="content">
       <div className="page-inner">
         <h1 className="page-title">Shop</h1>
         <div className="filter-row">
@@ -27,10 +29,16 @@ export default function Shop() {
         </div>
         <div className="grid-2">
           {list.map((p) => (
-            <article key={p.id} className="card">
+            <article
+              key={p.id}
+              className="card"
+              onPointerEnter={() => setHover(p.id)}
+              onPointerLeave={() => setHover(null)}
+            >
               <div className="card-photo">
                 <Link to={`/shop/${p.id}`}>
-                  <img src={p.images[0]} alt={p.name} />
+                  <img className="shot-a" src={p.images[0]} alt={p.name} />
+                  {p.images[1] && <img className="shot-b" src={p.images[1]} alt="" />}
                 </Link>
                 <button
                   className={`card-save ${saved.has(p.id) ? 'on' : ''}`}
@@ -42,15 +50,10 @@ export default function Shop() {
                   </svg>
                 </button>
                 <span className="card-dots" aria-hidden="true">
-                  {p.images.map((_, i) => <i key={i} className={i === 0 ? 'on' : ''} />)}
+                  {p.images.map((_, i) => (
+                    <i key={i} className={hover === p.id && i === 1 ? 'on' : i === 0 && hover !== p.id ? 'on' : ''} />
+                  ))}
                 </span>
-                <button
-                  className="card-add"
-                  aria-label={`Add ${p.name} to cart`}
-                  onClick={() => add(p, 'M')}
-                >
-                  +
-                </button>
               </div>
               <Link to={`/shop/${p.id}`} className="card-meta">
                 <div className="card-name">{p.name}</div>

@@ -142,5 +142,5 @@ export const collections = [
 export const sizes = ['S', 'M', 'L', 'XL']
 
 export function formatPrice(n) {
-  return `Rs. ${n.toLocaleString('en-IN')}`
+  return `₹${n.toLocaleString('en-IN')}`
 }

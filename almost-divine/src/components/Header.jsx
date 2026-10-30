@@ -3,7 +3,7 @@ import { chapters, nav } from '../data.js'
 import { useStore } from '../store.jsx'
 
 export default function Header() {
-  const { count, setCartOpen, setSearchOpen, homeIndex } = useStore()
+  const { count, setCartOpen, setSearchOpen, homeIndex, setHomeIndex } = useStore()
   const loc = useLocation()
   const home = loc.pathname === '/'
   const onPhoto = home && homeIndex < chapters.length
@@ -28,7 +28,7 @@ export default function Header() {
           </Link>
         ))}
       </nav>
-      <Link to="/" className="wordmark">Almost Divine</Link>
+      <Link to="/" className="wordmark" onClick={() => setHomeIndex(0)}>Almost Divine</Link>
       <div className="header-right">
         <button className="icon-btn text-btn" aria-label="Search" onClick={() => setSearchOpen(true)}>
           <span className="link-label">Search</span>

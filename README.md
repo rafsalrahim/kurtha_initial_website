@@ -9,7 +9,8 @@ This repository is now **docs + a sample storefront**. It is not a live shop.
 | Path | What |
 |---|---|
 | `docs/` | Research, ADRs, PRD, design system, backlog |
-| `storefront/` | Next.js 15 house UI, sample catalogue |
+| `storefront/` | Next.js 15 Valoir sample UI |
+| `almost-divine/` | Vite + React prototype (Almost Gods modules, Almost Divine name) |
 | `backend/` | Reserved for Medusa (not booted) |
 | `.env.example` | Names only |
 
@@ -20,6 +21,10 @@ cd storefront && npm install && npm run dev
 ```
 
 Open http://127.0.0.1:3000. Do **not** point Funnel at it. Funnel stays on `/root/valoir-site`.
+
+## Almost Divine prototype (this branch)
+
+Vite + React campaign stack. Docs: `docs/almost-divine.md`. Run: `cd almost-divine && npm install && npm run dev` (port 8081). Checkout is not live.
 
 ## Locked decisions
 
